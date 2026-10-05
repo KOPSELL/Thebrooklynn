@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 7%;
+    --foreground: 40 20% 90%;
+
+    --card: 220 18% 10%;
+    --card-foreground: 40 20% 90%;
+
+    --popover: 220 18% 12%;
+    --popover-foreground: 40 20% 90%;
+
+    --primary: 40 70% 50%;
+    --primary-foreground: 220 20% 7%;
+
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 40 20% 85%;
+
+    --muted: 220 15% 15%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 40 70% 50%;
+    --accent-foreground: 220 20% 7%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 40 70% 50%;
+
+    --radius: 0.75rem;
+
+    --gold: 40 70% 50%;
+    --gold-light: 40 60% 65%;
+    --gold-dark: 40 80% 35%;
+
+    --sidebar-background: 220 18% 10%;
+    --sidebar-foreground: 40 20% 90%;
+    --sidebar-primary: 40 70% 50%;
+    --sidebar-primary-foreground: 220 20% 7%;
+    --sidebar-accent: 220 15% 15%;
+    --sidebar-accent-foreground: 40 20% 90%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 40 70% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer utilities {
+  .text-gold-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--gold-light)), hsl(var(--gold)), hsl(var(--gold-dark)));
+  }
+
+  .border-gold-gradient {
+    border-image: linear-gradient(135deg, hsl(var(--gold-light)), hsl(var(--gold-dark))) 1;
+  }
+
+  .bg-gold-gradient {
+    background: linear-gradient(135deg, hsl(var(--gold-light)), hsl(var(--gold)), hsl(var(--gold-dark)));
+  }
+}

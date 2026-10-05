@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>El Patron Barbearia - Agendamento Online</title>
+    <meta name="description" content="Agende seu horário na El Patron Barbearia. Corte, barba e luzes com Maurício e Greg." />
+    <meta name="author" content="El Patron Barbearia" />
+    <meta name="theme-color" content="#c9a227" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="El Patron" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/pwa-icon.svg" />
+
+    <meta property="og:title" content="El Patron Barbearia" />
+    <meta property="og:description" content="Agende seu horário online. Corte, barba e luzes." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Lovable" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
