@@ -22,14 +22,22 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@Lovable" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <!-- OneSignal Web Push SDK v16 -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(function (OneSignal) {
+        OneSignal.init({
+          appId: "6e736ec1-785c-48da-9b6e-c461a926c3c2",
+          allowLocalhostAsSecureOrigin: true
+        });
+      });
+    </script>
   </head>
 
   <body>
     <div id="root"></div>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
