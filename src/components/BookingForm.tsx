@@ -11,6 +11,83 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon, Check, Scissors, Clock, User, Phone } from "lucide-react";
 import { toast } from "sonner";
 
+const THEBROOKLYNN_BARBERSHOP_ID = "836d4853-d45e-44cb-9b87-14b88fc0fe48";
+const THEBROOKLYNN_ONESIGNAL_APP_ID = "6e736ec1-785c-48da-9b6e-c461a926c3c2";
+
+type OneSignalInstance = {
+  User?: {
+    PushSubscription?: {
+      id?: string | null;
+    };
+  };
+};
+
+declare global {
+  interface Window {
+    OneSignalDeferred?: Array<(OneSignal: OneSignalInstance) => void | Promise<void>>;
+  }
+}
+
+const saveOneSignalSubscription = async (barberId: string) => {
+  if (!window.OneSignalDeferred) {
+    console.warn("OneSignal ainda não está disponível.");
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    window.OneSignalDeferred!.push(async (OneSignal) => {
+      try {
+        const subscriptionId = OneSignal.User?.PushSubscription?.id;
+
+        if (!subscriptionId) {
+          console.warn("Nenhuma assinatura OneSignal encontrada neste dispositivo.");
+          resolve();
+          return;
+        }
+
+        const { data: existing, error: findError } = await supabase
+          .from("barber_push_subscriptions")
+          .select("id")
+          .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+          .eq("barber_id", barberId)
+          .eq("onesignal_app_id", THEBROOKLYNN_ONESIGNAL_APP_ID)
+          .maybeSingle();
+
+        if (findError) throw findError;
+
+        if (existing?.id) {
+          const { error } = await supabase
+            .from("barber_push_subscriptions")
+            .update({
+              onesignal_subscription_id: subscriptionId,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existing.id);
+
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("barber_push_subscriptions")
+            .insert({
+              barbershop_id: THEBROOKLYNN_BARBERSHOP_ID,
+              barber_id: barberId,
+              onesignal_app_id: THEBROOKLYNN_ONESIGNAL_APP_ID,
+              onesignal_subscription_id: subscriptionId,
+            });
+
+          if (error) throw error;
+        }
+
+        console.info("Assinatura OneSignal salva para o Thebrooklynn.");
+      } catch (error) {
+        console.error("Erro ao salvar assinatura OneSignal:", error);
+      } finally {
+        resolve();
+      }
+    });
+  });
+};
+
 const TIME_SLOTS = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
   "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
@@ -79,9 +156,18 @@ const BookingForm = () => {
       }).select("id").single();
       if (error) throw error;
 
+      await saveOneSignalSubscription(selectedBarber);
+
       const { data: notificationResult, error: notificationError } = await supabase.functions.invoke(
         "send-appointment-notification",
-        { body: { appointmentId: appointment.id } },
+        {
+          body: {
+            appointmentId: appointment.id,
+            barbershopId: THEBROOKLYNN_BARBERSHOP_ID,
+            onesignalAppId: THEBROOKLYNN_ONESIGNAL_APP_ID,
+            barberId: selectedBarber,
+          },
+        },
       );
 
       if (notificationError || notificationResult?.delivered === false) {
