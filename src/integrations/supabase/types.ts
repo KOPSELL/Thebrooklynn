@@ -118,6 +118,36 @@ export type Database = {
           },
         ]
       }
+      barber_push_subscriptions: {
+        Row: {
+          id: string
+          barbershop_id: string
+          barber_id: string
+          onesignal_app_id: string
+          onesignal_subscription_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          barbershop_id: string
+          barber_id: string
+          onesignal_app_id: string
+          onesignal_subscription_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          barbershop_id?: string
+          barber_id?: string
+          onesignal_app_id?: string
+          onesignal_subscription_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           created_at: string
