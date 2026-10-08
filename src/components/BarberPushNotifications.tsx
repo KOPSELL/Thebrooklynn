@@ -7,29 +7,35 @@ import { externalNotifications } from "@/integrations/external-notifications/cli
 declare global {
   interface Window {
     OneSignal?: any;
+    OneSignalReady?: Promise<any>;
     OneSignalDeferred?: Array<(OneSignal: any) => void | Promise<void>>;
   }
 }
 
 type Barber = { id: string; name: string };
 
-const ONESIGNAL_APP_ID =
-  import.meta.env.VITE_ONESIGNAL_APP_ID || "bfc85f23-820f-419d-ba36-9f89ae39d2ae";
-
 let oneSignalReady: Promise<any> | null = null;
 
+// O index.html é o único lugar que inicializa o SDK.
+// Este componente apenas aguarda e reutiliza a instância já inicializada.
 const initializeOneSignal = () => {
   if (oneSignalReady) return oneSignalReady;
+
+  if (window.OneSignalReady) {
+    oneSignalReady = window.OneSignalReady.then((OneSignal) => {
+      window.OneSignal = OneSignal;
+      return OneSignal;
+    });
+    return oneSignalReady;
+  }
+
   oneSignalReady = new Promise((resolve, reject) => {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async (OneSignal: any) => {
       try {
-        await OneSignal.init({
-          appId: ONESIGNAL_APP_ID,
-          allowLocalhostAsSecureOrigin: true,
-          serviceWorkerPath: "/OneSignalSDKWorker.js",
-          serviceWorkerParam: { scope: "/" },
-        });
+        if (window.OneSignalReady) {
+          await window.OneSignalReady;
+        }
         window.OneSignal = OneSignal;
         resolve(OneSignal);
       } catch (error) {
@@ -37,6 +43,7 @@ const initializeOneSignal = () => {
       }
     });
   });
+
   return oneSignalReady;
 };
 
