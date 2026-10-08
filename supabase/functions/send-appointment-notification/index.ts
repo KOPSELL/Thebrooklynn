@@ -68,8 +68,8 @@ const sendExternalOneSignalNotification = async (
     }, 200);
   }
 
-  const oneSignalAppId = Deno.env.get("ONESIGNAL_APP_ID");
-  const oneSignalApiKey = Deno.env.get("ONESIGNAL_API_KEY");
+  const oneSignalAppId = Deno.env.get("ONESIGNAL_APP_ID_THEBROOKLYNN") || Deno.env.get("ONESIGNAL_APP_ID");
+  const oneSignalApiKey = Deno.env.get("ONESIGNAL_API_KEY_THEBROOKLYNN") || Deno.env.get("ONESIGNAL_API_KEY");
 
   if (!oneSignalAppId || !oneSignalApiKey) {
     return jsonResponse({ ok: false, delivered: false, error: "OneSignal não está configurado." }, 500);
