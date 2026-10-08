@@ -5,7 +5,7 @@ const HeroSection = () => {
   const [displayText, setDisplayText] = useState("");
   const [showSubtitle, setShowSubtitle] = useState(false);
   const [showLine, setShowLine] = useState(false);
-  const fullText = "EL PATRON";
+  const fullText = "THE BROOKLYN";
 
   useEffect(() => {
     let i = 0;
@@ -28,7 +28,7 @@ const HeroSection = () => {
       <div className="absolute inset-0">
         <img
           src={heroImage}
-          alt="El Patron Barbearia"
+          alt="The Brooklyn Barbearia"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-background/80" />
