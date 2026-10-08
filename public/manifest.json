@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "El Patron Barbearia",
-  "short_name": "El Patron",
-  "description": "Agendamento online da El Patron Barbearia.",
+  "name": "The Brooklyn Barbearia",
+  "short_name": "The Brooklyn",
+  "description": "Agendamento online da The Brooklyn Barbearia.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
