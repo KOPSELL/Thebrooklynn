@@ -48,18 +48,48 @@ const sendExternalOneSignalNotification = async (
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: profile, error: profileError } = await external
+  const oneSignalAppId = Deno.env.get("ONESIGNAL_APP_ID_THEBROOKLYNN") || Deno.env.get("ONESIGNAL_APP_ID");
+  const oneSignalApiKey = Deno.env.get("ONESIGNAL_API_KEY_THEBROOKLYNN") || Deno.env.get("ONESIGNAL_API_KEY");
+
+  if (!oneSignalAppId || !oneSignalApiKey) {
+    return jsonResponse({ ok: false, delivered: false, error: "OneSignal não está configurado." }, 500);
+  }
+
+  // Busca todos os aparelhos cadastrados para este barbeiro (celular + PC).
+  const { data: subscriptions, error: subscriptionsError } = await external
+    .from("barber_push_subscriptions")
+    .select("onesignal_subscription_id")
+    .eq("barbershop_id", "836d4853-d45e-44cb-9b87-14b88fc0fe48")
+    .eq("barber_id", record.barber_id)
+    .eq("onesignal_app_id", oneSignalAppId);
+
+  if (subscriptionsError) {
+    console.error("Barber push subscriptions lookup failed", subscriptionsError);
+    return jsonResponse({ ok: false, delivered: false, error: "Falha ao localizar os dispositivos do barbeiro." }, 500);
+  }
+
+  const subscriptionIds = (subscriptions ?? [])
+    .map((row: { onesignal_subscription_id: string | null }) => row.onesignal_subscription_id)
+    .filter((id: string | null): id is string => Boolean(id));
+
+  // Compatibilidade temporária com o registro antigo, usado antes do cadastro multiaparelho.
+  const { data: legacyProfile, error: legacyError } = await external
     .from("perfis_barbeiros")
     .select("onesignal_subscription_id")
     .eq("barber_id", record.barber_id)
     .maybeSingle();
 
-  if (profileError) {
-    console.error("Barber push profile lookup failed", profileError);
-    return jsonResponse({ ok: false, delivered: false, error: "Falha ao localizar o dispositivo do barbeiro." }, 500);
+  if (legacyError) {
+    console.error("Legacy barber push profile lookup failed", legacyError);
   }
 
-  if (!profile?.onesignal_subscription_id) {
+  if (legacyProfile?.onesignal_subscription_id) {
+    subscriptionIds.push(legacyProfile.onesignal_subscription_id);
+  }
+
+  const uniqueSubscriptionIds = [...new Set(subscriptionIds)];
+
+  if (uniqueSubscriptionIds.length === 0) {
     return jsonResponse({
       ok: false,
       delivered: false,
@@ -67,9 +97,6 @@ const sendExternalOneSignalNotification = async (
       recipients: 0,
     }, 200);
   }
-
-  const oneSignalAppId = Deno.env.get("ONESIGNAL_APP_ID_THEBROOKLYNN") || Deno.env.get("ONESIGNAL_APP_ID");
-  const oneSignalApiKey = Deno.env.get("ONESIGNAL_API_KEY_THEBROOKLYNN") || Deno.env.get("ONESIGNAL_API_KEY");
 
   if (!oneSignalAppId || !oneSignalApiKey) {
     return jsonResponse({ ok: false, delivered: false, error: "OneSignal não está configurado." }, 500);
@@ -83,7 +110,7 @@ const sendExternalOneSignalNotification = async (
     },
     body: JSON.stringify({
       app_id: oneSignalAppId,
-      include_subscription_ids: [profile.onesignal_subscription_id],
+      include_subscription_ids: uniqueSubscriptionIds,
       headings: {
         pt: "Novo agendamento",
         en: "Novo agendamento",
@@ -106,7 +133,7 @@ const sendExternalOneSignalNotification = async (
     console.error("OneSignal notification failed", {
       status: oneSignalResponse.status,
       result: oneSignalResult,
-      subscriptionId: profile.onesignal_subscription_id,
+      subscriptionIds: uniqueSubscriptionIds,
     });
     return jsonResponse({
       ok: false,
