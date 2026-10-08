@@ -93,7 +93,7 @@ const BarberPushNotifications = ({ barbers }: { barbers: Barber[] | undefined })
       .then(async (permission: boolean) => {
         if (!permission) {
           throw new Error(
-            "A permissão de notificações não foi concedida. Verifique Ajustes > Notificações > El Patron."
+            "A permissão de notificações não foi concedida. Verifique Ajustes > Notificações > The Brooklyn."
           );
         }
 
