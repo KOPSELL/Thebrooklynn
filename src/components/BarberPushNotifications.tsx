@@ -135,17 +135,26 @@ const BarberPushNotifications = ({ barbers }: { barbers: Barber[] | undefined })
           throw new Error("Este barbeiro ainda não está disponível para notificações.");
         }
 
-        const { error: registrationError } = await externalNotifications.rpc(
-          "register_barber_push_subscription",
-          {
-            p_barber_id: externalBarber.id,
-            p_onesignal_subscription_id: subscriptionId,
-          },
-        );
+        // Registra cada dispositivo separadamente. Assim, o PC e o celular
+        // podem receber notificações para o mesmo barbeiro.
+        const { error: registrationError } = await externalNotifications
+          .from("barber_push_subscriptions")
+          .upsert(
+            {
+              barbershop_id: "836d4853-d45e-44cb-9b87-14b88fc0fe48",
+              barber_id: externalBarber.id,
+              onesignal_app_id: "6e736ec1-785c-48da-9b6e-c461a926c3c2",
+              onesignal_subscription_id: subscriptionId,
+            },
+            {
+              onConflict: "barbershop_id,barber_id,onesignal_app_id,onesignal_subscription_id",
+              ignoreDuplicates: true,
+            },
+          );
 
         if (registrationError) {
           throw new Error(
-            `Não foi possível salvar o dispositivo de notificações: ${registrationError.message}`
+            `Não foi possível salvar este dispositivo: ${registrationError.message}`
           );
         }
 
