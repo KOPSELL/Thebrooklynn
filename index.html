@@ -30,6 +30,8 @@
       window.OneSignalDeferred.push(function (OneSignal) {
         OneSignal.init({
           appId: "6e736ec1-785c-48da-9b6e-c461a926c3c2",
+          serviceWorkerPath: "OneSignalSDKWorker.js",
+          serviceWorkerParam: { scope: "/" },
           allowLocalhostAsSecureOrigin: true
         });
       });
