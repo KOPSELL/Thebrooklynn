@@ -1,4 +1,4 @@
-# El Patron Barbearia
+# The Brooklyn Barbearia
 
 ## Web Push para novos agendamentos
 
