@@ -29,7 +29,7 @@ import { Link } from "react-router-dom";
 
 const Admin = () => {
   const queryClient = useQueryClient();
-  const [isAuthed, setIsAuthed] = useState(() => sessionStorage.getItem("el_patron_admin") === "1");
+  const [isAuthed, setIsAuthed] = useState(() => sessionStorage.getItem("the_brooklyn_admin") === "1");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [filterBarber, setFilterBarber] = useState<string | null>(null);
 
@@ -110,7 +110,7 @@ const Admin = () => {
             </Link>
             <div>
               <h1 className="text-2xl font-bold">
-                <span className="text-gold-gradient">El Patron</span>
+                <span className="text-gold-gradient">The Brooklyn</span>
               </h1>
               <p className="text-xs text-muted-foreground">Painel de Administração</p>
             </div>
