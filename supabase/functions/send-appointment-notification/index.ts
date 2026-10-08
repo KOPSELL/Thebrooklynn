@@ -98,10 +98,6 @@ const sendExternalOneSignalNotification = async (
     }, 200);
   }
 
-  if (!oneSignalAppId || !oneSignalApiKey) {
-    return jsonResponse({ ok: false, delivered: false, error: "OneSignal não está configurado." }, 500);
-  }
-
   const oneSignalResponse = await fetch("https://api.onesignal.com/notifications", {
     method: "POST",
     headers: {
