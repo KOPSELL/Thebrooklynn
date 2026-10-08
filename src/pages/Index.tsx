@@ -11,7 +11,7 @@ const Index = () => {
       <BookingForm />
       <footer className="py-8 text-center border-t border-border">
         <p className="text-sm text-muted-foreground mb-2">
-          © 2026 <span className="text-primary font-semibold">El Patron</span> Barbearia. Todos os direitos reservados.
+          © 2026 <span className="text-primary font-semibold">The Brooklyn</span> Barbearia. Todos os direitos reservados.
         </p>
         <Link to="/admin" className="text-xs text-muted-foreground hover:text-primary transition-colors">
           Área do Barbeiro
