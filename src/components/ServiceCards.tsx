@@ -41,28 +41,28 @@ const ServiceCards = () => {
   });
 
   return (
-    <section className="py-16 px-4">
-      <div className="max-w-4xl mx-auto">
+    <section className="py-10 md:py-12 px-3 md:px-4">
+      <div className="max-w-5xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">
           <span className="text-gold-gradient">Nossos Serviços</span>
         </h2>
-        <p className="text-center text-muted-foreground mb-10">
+        <p className="text-center text-muted-foreground mb-6 md:mb-7">
           Qualidade e estilo em cada detalhe
         </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
           {services?.map((service) => (
             <div
               key={service.id}
-              className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 group"
+              className="bg-card border border-border rounded-xl p-4 md:p-5 text-center hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 group"
             >
               {serviceImages[service.name] ? (
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden border-2 border-primary/30">
+                <div className="w-14 h-14 mx-auto mb-3 rounded-full overflow-hidden border-2 border-primary/30">
                   <img src={serviceImages[service.name]} alt={service.name} className="w-full h-full object-cover" />
                 </div>
               ) : (
-                <div className="text-4xl mb-4">{serviceIcons[service.name] || "💈"}</div>
+                <div className="text-3xl mb-3">{serviceIcons[service.name] || "💈"}</div>
               )}
-              <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+              <h3 className="font-semibold text-base md:text-lg mb-1 group-hover:text-primary transition-colors">
                 {service.name.toLowerCase() === "corte + barba + sobrancelha" ? "Corte + sobrancelha e barba" : service.name}
               </h3>
               <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mb-2">
