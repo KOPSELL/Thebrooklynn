@@ -21,7 +21,10 @@ const ServiceCards = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from("services").select("*").eq("barbershop_id", "836d4853-d45e-44cb-9b87-14b88fc0fe48");
       if (error) throw error;
-      return data;
+      const order = ["Corte", "Corte + barba + sobrancelha", "Barba", "Sobrancelha"];
+      return data
+        .filter((service) => order.includes(service.name.toLowerCase()))
+        .sort((first, second) => order.indexOf(first.name.toLowerCase()) - order.indexOf(second.name.toLowerCase()));
     },
   });
 
@@ -48,7 +51,7 @@ const ServiceCards = () => {
                 <div className="text-4xl mb-4">{serviceIcons[service.name] || "💈"}</div>
               )}
               <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
-                {service.name}
+                {service.name.toLowerCase() === "corte + barba + sobrancelha" ? "Corte + sobrancelha e barba" : service.name}
               </h3>
               <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mb-2">
                 <Clock className="w-3 h-3" />
