@@ -156,26 +156,35 @@ const BookingForm = () => {
       }).select("id").single();
       if (error) throw error;
 
-      await saveOneSignalSubscription(selectedBarber);
+      // O agendamento já foi gravado no banco. Cadastro de push e notificação
+      // são tarefas secundárias e não podem deixar o botão preso em "Agendando..."
+      // caso o OneSignal não inicialize ou a rede móvel esteja lenta.
+      void (async () => {
+        try {
+          await saveOneSignalSubscription(selectedBarber);
 
-      const { data: notificationResult, error: notificationError } = await supabase.functions.invoke(
-        "send-appointment-notification",
-        {
-          body: {
-            appointmentId: appointment.id,
-            barbershopId: THEBROOKLYNN_BARBERSHOP_ID,
-            onesignalAppId: THEBROOKLYNN_ONESIGNAL_APP_ID,
-            barberId: selectedBarber,
-          },
-        },
-      );
+          const { data: notificationResult, error: notificationError } = await supabase.functions.invoke(
+            "send-appointment-notification",
+            {
+              body: {
+                appointmentId: appointment.id,
+                barbershopId: THEBROOKLYNN_BARBERSHOP_ID,
+                onesignalAppId: THEBROOKLYNN_ONESIGNAL_APP_ID,
+                barberId: selectedBarber,
+              },
+            },
+          );
 
-      if (notificationError || notificationResult?.delivered === false) {
-        console.error(
-          "O agendamento foi salvo, mas a notificação não foi entregue:",
-          notificationError ?? notificationResult,
-        );
-      }
+          if (notificationError || notificationResult?.delivered === false) {
+            console.error(
+              "O agendamento foi salvo, mas a notificação não foi entregue:",
+              notificationError ?? notificationResult,
+            );
+          }
+        } catch (notificationError) {
+          console.error("Falha na etapa de notificação; agendamento mantido:", notificationError);
+        }
+      })();
     },
     onSuccess: () => {
       toast.success("Agendamento confirmado!", {
