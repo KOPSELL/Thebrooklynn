@@ -23,9 +23,20 @@ const ServiceCards = () => {
       if (error) throw error;
       const normalize = (name: string) => name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
       const order = ["corte", "corte + barba + sobrancelha", "barba", "sobrancelha"];
-      return (data ?? [])
-        .filter((service) => order.includes(normalize(service.name)))
-        .sort((first, second) => order.indexOf(normalize(first.name)) - order.indexOf(normalize(second.name)));
+      const matching = (data ?? []).filter((service) => order.includes(normalize(service.name)));
+      // Prioriza o cadastro específico desta barbearia e elimina serviços duplicados pelo nome.
+      matching.sort((first, second) => {
+        const firstScoped = first.barbershop_id === "836d4853-d45e-44cb-9b87-14b88fc0fe48" ? 0 : 1;
+        const secondScoped = second.barbershop_id === "836d4853-d45e-44cb-9b87-14b88fc0fe48" ? 0 : 1;
+        return firstScoped - secondScoped || order.indexOf(normalize(first.name)) - order.indexOf(normalize(second.name));
+      });
+      const seen = new Set<string>();
+      return matching.filter((service) => {
+        const name = normalize(service.name);
+        if (seen.has(name)) return false;
+        seen.add(name);
+        return true;
+      }).sort((first, second) => order.indexOf(normalize(first.name)) - order.indexOf(normalize(second.name)));
     },
   });
 
