@@ -156,13 +156,15 @@ const BookingForm = () => {
       }).select("id").single();
       if (error) throw error;
 
-      // O agendamento já foi gravado no banco. Cadastro de push e notificação
-      // são tarefas secundárias e não podem deixar o botão preso em "Agendando..."
-      // caso o OneSignal não inicialize ou a rede móvel esteja lenta.
+      // O agendamento já foi salvo. Rode o cadastro do dispositivo e o envio
+      // em tarefas separadas: o callback do OneSignal pode não disparar em alguns
+      // celulares e nunca deve impedir o envio da notificação.
+      void saveOneSignalSubscription(selectedBarber).catch((subscriptionError) => {
+        console.error("Falha ao atualizar assinatura OneSignal:", subscriptionError);
+      });
+
       void (async () => {
         try {
-          await saveOneSignalSubscription(selectedBarber);
-
           const { data: notificationResult, error: notificationError } = await supabase.functions.invoke(
             "send-appointment-notification",
             {
@@ -175,14 +177,16 @@ const BookingForm = () => {
             },
           );
 
-          if (notificationError || notificationResult?.delivered === false) {
+          if (notificationError || notificationResult?.delivered === false || notificationResult?.ok === false) {
             console.error(
               "O agendamento foi salvo, mas a notificação não foi entregue:",
               notificationError ?? notificationResult,
             );
+          } else {
+            console.info("Resultado do envio da notificação:", notificationResult);
           }
         } catch (notificationError) {
-          console.error("Falha na etapa de notificação; agendamento mantido:", notificationError);
+          console.error("Falha ao enviar notificação; agendamento mantido:", notificationError);
         }
       })();
     },
