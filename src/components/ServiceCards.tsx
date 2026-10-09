@@ -19,12 +19,13 @@ const ServiceCards = () => {
   const { data: services } = useQuery({
     queryKey: ["services"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("*").eq("barbershop_id", "836d4853-d45e-44cb-9b87-14b88fc0fe48");
+      const { data, error } = await supabase.from("services").select("*");
       if (error) throw error;
-      const order = ["Corte", "Corte + barba + sobrancelha", "Barba", "Sobrancelha"];
-      return data
-        .filter((service) => order.includes(service.name.toLowerCase()))
-        .sort((first, second) => order.indexOf(first.name.toLowerCase()) - order.indexOf(second.name.toLowerCase()));
+      const normalize = (name: string) => name.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").trim().toLowerCase().replace(/\\s+/g, " ");
+      const order = ["corte", "corte + barba + sobrancelha", "barba", "sobrancelha"];
+      return (data ?? [])
+        .filter((service) => order.includes(normalize(service.name)))
+        .sort((first, second) => order.indexOf(normalize(first.name)) - order.indexOf(normalize(second.name)));
     },
   });
 
