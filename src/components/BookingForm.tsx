@@ -99,6 +99,7 @@ const BookingForm = () => {
   const [selectedBarber, setSelectedBarber] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
@@ -341,7 +342,7 @@ const BookingForm = () => {
 
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Selecione a data</p>
-                <Popover>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -363,6 +364,7 @@ const BookingForm = () => {
                       onSelect={(date) => {
                         setSelectedDate(date);
                         setSelectedTime(null);
+                        setCalendarOpen(false);
                       }}
                       disabled={(date) =>
                         isBefore(date, startOfToday()) || isBefore(addDays(new Date(), 30), date)
