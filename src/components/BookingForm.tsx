@@ -116,7 +116,7 @@ const BookingForm = () => {
   const { data: services } = useQuery({
     queryKey: ["services"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("*");
+      const { data, error } = await supabase.from("services").select("*").eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID);
       if (error) throw error;
       return data;
     },
