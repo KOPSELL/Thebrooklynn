@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,77 +6,126 @@
 
 @layer base {
   :root {
-    --background: 220 20% 7%;
-    --foreground: 40 20% 90%;
-
-    --card: 220 18% 10%;
-    --card-foreground: 40 20% 90%;
-
-    --popover: 220 18% 12%;
-    --popover-foreground: 40 20% 90%;
-
-    --primary: 40 70% 50%;
-    --primary-foreground: 220 20% 7%;
-
-    --secondary: 220 15% 15%;
-    --secondary-foreground: 40 20% 85%;
-
-    --muted: 220 15% 15%;
-    --muted-foreground: 220 10% 55%;
-
-    --accent: 40 70% 50%;
-    --accent-foreground: 220 20% 7%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 220 15% 18%;
-    --input: 220 15% 18%;
-    --ring: 40 70% 50%;
-
-    --radius: 0.75rem;
-
-    --gold: 40 70% 50%;
-    --gold-light: 40 60% 65%;
-    --gold-dark: 40 80% 35%;
-
-    --sidebar-background: 220 18% 10%;
-    --sidebar-foreground: 40 20% 90%;
-    --sidebar-primary: 40 70% 50%;
-    --sidebar-primary-foreground: 220 20% 7%;
-    --sidebar-accent: 220 15% 15%;
-    --sidebar-accent-foreground: 40 20% 90%;
-    --sidebar-border: 220 15% 18%;
-    --sidebar-ring: 40 70% 50%;
+    --background: 42 35% 94%;
+    --foreground: 157 28% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 157 28% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 157 28% 14%;
+    --primary: 19 75% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 153 25% 89%;
+    --secondary-foreground: 157 28% 14%;
+    --muted: 38 20% 88%;
+    --muted-foreground: 157 10% 42%;
+    --accent: 19 75% 48%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 153 15% 82%;
+    --input: 153 15% 82%;
+    --ring: 19 75% 48%;
+    --radius: 1rem;
+    --gold: 19 75% 48%;
+    --gold-light: 25 80% 58%;
+    --gold-dark: 157 28% 22%;
+    --sidebar-background: 157 28% 14%;
+    --sidebar-foreground: 42 35% 94%;
+    --sidebar-primary: 19 75% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 157 20% 22%;
+    --sidebar-accent-foreground: 42 35% 94%;
+    --sidebar-border: 157 18% 26%;
+    --sidebar-ring: 19 75% 48%;
   }
-}
 
-@layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
+
+  html { scroll-behavior: smooth; }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', sans-serif;
+    background-image: radial-gradient(ellipse at top left, hsl(38 50% 100% / .8), transparent 45%);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Oswald', sans-serif;
+    letter-spacing: .015em;
   }
+
+  ::selection {
+    background: hsl(var(--primary) / .22);
+    color: hsl(var(--foreground));
+  }
+
+  button, input, select, textarea { font: inherit; }
 }
 
 @layer utilities {
   .text-gold-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--gold-light)), hsl(var(--gold)), hsl(var(--gold-dark)));
+    background-image: linear-gradient(120deg, hsl(157 28% 18%), hsl(19 75% 48%), hsl(25 80% 58%));
   }
 
   .border-gold-gradient {
-    border-image: linear-gradient(135deg, hsl(var(--gold-light)), hsl(var(--gold-dark))) 1;
+    border-image: linear-gradient(135deg, hsl(19 75% 48%), hsl(157 28% 22%)) 1;
   }
 
   .bg-gold-gradient {
-    background: linear-gradient(135deg, hsl(var(--gold-light)), hsl(var(--gold)), hsl(var(--gold-dark)));
+    background: linear-gradient(135deg, hsl(19 75% 48%), hsl(25 80% 58%));
   }
+}
+
+/* Visual identity: contemporary heritage barbershop */
+#root { min-height: 100vh; }
+
+section { scroll-margin-top: 2rem; }
+
+section.py-16 {
+  position: relative;
+}
+
+section.py-16 > div {
+  position: relative;
+  z-index: 1;
+}
+
+section.py-16 h2 {
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  text-transform: uppercase;
+  letter-spacing: .045em;
+}
+
+section.py-16 h2 + p {
+  font-size: .95rem;
+  letter-spacing: .04em;
+}
+
+section.py-16 .grid > div {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.15rem;
+  box-shadow: 0 12px 32px hsl(157 28% 14% / .06);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+
+section.py-16 .grid > div:hover {
+  transform: translateY(-5px);
+  border-color: hsl(var(--primary) / .65);
+  box-shadow: 0 18px 36px hsl(157 28% 14% / .12);
+}
+
+footer {
+  background: hsl(157 28% 14%);
+  color: hsl(42 35% 94%);
+  border-color: hsl(157 18% 26%) !important;
+}
+
+footer p, footer a { color: hsl(42 25% 78%); }
+footer a:hover { color: hsl(19 75% 65%); }
+
+@media (max-width: 640px) {
+  section.py-16 { padding-top: 3rem; padding-bottom: 3rem; }
+  section.py-16 .grid > div { padding: 1rem .65rem; }
 }
