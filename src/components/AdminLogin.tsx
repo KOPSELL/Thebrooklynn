@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Lock } from "lucide-react";
 
-const ADMIN_HASH = "eladmin";
+const ADMIN_HASH = "gregkopadmin";
 
 interface AdminLoginProps {
   onAuth: () => void;
