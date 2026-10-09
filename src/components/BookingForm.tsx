@@ -118,7 +118,10 @@ const BookingForm = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from("services").select("*").eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID);
       if (error) throw error;
-      return data;
+      const order = ["Corte", "Corte + barba + sobrancelha", "Barba", "Sobrancelha"];
+      return data
+        .filter((service) => order.includes(service.name.toLowerCase()))
+        .sort((first, second) => order.indexOf(first.name.toLowerCase()) - order.indexOf(second.name.toLowerCase()));
     },
   });
 
@@ -301,7 +304,7 @@ const BookingForm = () => {
                     )}
                   >
                     <div className="text-left">
-                      <p className="font-semibold text-lg">{service.name}</p>
+                      <p className="font-semibold text-lg">{service.name.toLowerCase() === "corte + barba + sobrancelha" ? "Corte + sobrancelha e barba" : service.name}</p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {service.duration_minutes} min
@@ -429,7 +432,7 @@ const BookingForm = () => {
               <div className="bg-secondary/50 rounded-lg p-4 border border-border space-y-2">
                 <p className="text-sm font-semibold text-primary mb-2">Resumo do agendamento</p>
                 <p className="text-sm"><span className="text-muted-foreground">Barbeiro:</span> {selectedBarberName}</p>
-                <p className="text-sm"><span className="text-muted-foreground">Serviço:</span> {selectedServiceData?.name}</p>
+                <p className="text-sm"><span className="text-muted-foreground">Serviço:</span> {selectedServiceData?.name.toLowerCase() === "corte + barba + sobrancelha" ? "Corte + sobrancelha e barba" : selectedServiceData?.name}</p>
                 <p className="text-sm"><span className="text-muted-foreground">Data:</span> {selectedDate && format(selectedDate, "dd/MM/yyyy")}</p>
                 <p className="text-sm"><span className="text-muted-foreground">Horário:</span> {selectedTime}</p>
                 <p className="text-sm font-semibold text-primary">
