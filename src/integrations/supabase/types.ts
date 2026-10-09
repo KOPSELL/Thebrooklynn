@@ -150,6 +150,7 @@ export type Database = {
       }
       services: {
         Row: {
+          barbershop_id: string | null
           created_at: string
           duration_minutes: number
           id: string
@@ -157,6 +158,7 @@ export type Database = {
           price: number
         }
         Insert: {
+          barbershop_id?: string | null
           created_at?: string
           duration_minutes?: number
           id?: string
@@ -164,6 +166,7 @@ export type Database = {
           price?: number
         }
         Update: {
+          barbershop_id?: string | null
           created_at?: string
           duration_minutes?: number
           id?: string
