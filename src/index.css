@@ -6,37 +6,37 @@
 
 @layer base {
   :root {
-    --background: 42 35% 94%;
-    --foreground: 157 28% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 157 28% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 157 28% 14%;
-    --primary: 19 75% 48%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 153 25% 89%;
-    --secondary-foreground: 157 28% 14%;
-    --muted: 38 20% 88%;
-    --muted-foreground: 157 10% 42%;
-    --accent: 19 75% 48%;
-    --accent-foreground: 0 0% 100%;
+    --background: 0 0% 5%;
+    --foreground: 40 15% 92%;
+    --card: 0 0% 8%;
+    --card-foreground: 40 15% 92%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 40 15% 92%;
+    --primary: 38 62% 52%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 13%;
+    --secondary-foreground: 40 15% 92%;
+    --muted: 0 0% 13%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 38 62% 52%;
+    --accent-foreground: 0 0% 5%;
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 153 15% 82%;
-    --input: 153 15% 82%;
-    --ring: 19 75% 48%;
-    --radius: 1rem;
-    --gold: 19 75% 48%;
-    --gold-light: 25 80% 58%;
-    --gold-dark: 157 28% 22%;
-    --sidebar-background: 157 28% 14%;
-    --sidebar-foreground: 42 35% 94%;
-    --sidebar-primary: 19 75% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 157 20% 22%;
-    --sidebar-accent-foreground: 42 35% 94%;
-    --sidebar-border: 157 18% 26%;
-    --sidebar-ring: 19 75% 48%;
+    --border: 0 0% 19%;
+    --input: 0 0% 19%;
+    --ring: 38 62% 52%;
+    --radius: .75rem;
+    --gold: 38 62% 52%;
+    --gold-light: 43 75% 68%;
+    --gold-dark: 30 48% 30%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 40 15% 92%;
+    --sidebar-primary: 38 62% 52%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 40 15% 92%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 38 62% 52%;
   }
 
   * { @apply border-border; }
@@ -46,16 +46,17 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'DM Sans', sans-serif;
-    background-image: radial-gradient(ellipse at top left, hsl(38 50% 100% / .8), transparent 45%);
+    background-color: hsl(var(--background));
+    background-image: radial-gradient(ellipse at 50% 0%, hsl(38 35% 14% / .22), transparent 48%);
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Oswald', sans-serif;
-    letter-spacing: .015em;
+    letter-spacing: .035em;
   }
 
   ::selection {
-    background: hsl(var(--primary) / .22);
+    background: hsl(var(--primary) / .35);
     color: hsl(var(--foreground));
   }
 
@@ -65,25 +66,26 @@
 @layer utilities {
   .text-gold-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(120deg, hsl(157 28% 18%), hsl(19 75% 48%), hsl(25 80% 58%));
+    background-image: linear-gradient(120deg, hsl(43 75% 70%), hsl(38 62% 52%), hsl(30 48% 35%));
   }
 
   .border-gold-gradient {
-    border-image: linear-gradient(135deg, hsl(19 75% 48%), hsl(157 28% 22%)) 1;
+    border-image: linear-gradient(135deg, hsl(43 75% 68%), hsl(30 48% 30%)) 1;
   }
 
   .bg-gold-gradient {
-    background: linear-gradient(135deg, hsl(19 75% 48%), hsl(25 80% 58%));
+    background: linear-gradient(135deg, hsl(43 75% 62%), hsl(30 48% 36%));
   }
 }
 
-/* Visual identity: contemporary heritage barbershop */
+/* Premium black-and-gold barbershop identity */
 #root { min-height: 100vh; }
 
 section { scroll-margin-top: 2rem; }
 
 section.py-16 {
   position: relative;
+  isolation: isolate;
 }
 
 section.py-16 > div {
@@ -94,36 +96,45 @@ section.py-16 > div {
 section.py-16 h2 {
   font-size: clamp(2rem, 4vw, 3.1rem);
   text-transform: uppercase;
-  letter-spacing: .045em;
+  letter-spacing: .07em;
 }
 
 section.py-16 h2 + p {
   font-size: .95rem;
-  letter-spacing: .04em;
+  letter-spacing: .035em;
+  color: hsl(var(--muted-foreground));
 }
 
 section.py-16 .grid > div {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: 1.15rem;
-  box-shadow: 0 12px 32px hsl(157 28% 14% / .06);
+  background: linear-gradient(145deg, hsl(0 0% 10%), hsl(0 0% 7%));
+  border: 1px solid hsl(38 40% 28% / .55);
+  border-radius: .75rem;
+  box-shadow: 0 12px 32px hsl(0 0% 0% / .28);
   transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
 
 section.py-16 .grid > div:hover {
-  transform: translateY(-5px);
-  border-color: hsl(var(--primary) / .65);
-  box-shadow: 0 18px 36px hsl(157 28% 14% / .12);
+  transform: translateY(-4px);
+  border-color: hsl(var(--primary) / .9);
+  box-shadow: 0 18px 36px hsl(0 0% 0% / .45), 0 0 22px hsl(var(--primary) / .07);
 }
 
 footer {
-  background: hsl(157 28% 14%);
-  color: hsl(42 35% 94%);
-  border-color: hsl(157 18% 26%) !important;
+  background: hsl(0 0% 3%);
+  color: hsl(40 15% 92%);
+  border-color: hsl(38 40% 24%) !important;
 }
 
-footer p, footer a { color: hsl(42 25% 78%); }
-footer a:hover { color: hsl(19 75% 65%); }
+footer p, footer a { color: hsl(0 0% 68%); }
+footer a:hover { color: hsl(var(--gold-light)); }
+
+button, [role="button"] {
+  transition: filter .2s ease, transform .2s ease;
+}
+
+button:hover:not(:disabled), [role="button"]:hover {
+  filter: brightness(1.08);
+}
 
 @media (max-width: 640px) {
   section.py-16 { padding-top: 3rem; padding-bottom: 3rem; }
