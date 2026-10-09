@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Clock } from "lucide-react";
 import corteImage from "@/assets/WhatsApp Image 2026-10-05 at 10.22.15.jpeg";
-import barbaImage from "@/assets/barba-service.png";
+import barbaImage from "@/assets/barba.webp";
+import comboImage from "@/assets/WhatsApp Image 2026-10-09 at 13.47.26.jpeg";
 import sobrancelhaImage from "@/assets/sobrancelha.webp";
 
 const normalize = (name: string) =>
@@ -35,7 +36,8 @@ const ServiceCards = () => {
     const normalized = normalize(name);
     if (normalized === "sobrancelha") return sobrancelhaImage;
     if (normalized === "corte") return corteImage;
-    if (normalized === "barba" || normalized === "corte + barba + sobrancelha") return barbaImage;
+    if (normalized === "barba") return barbaImage;
+    if (normalized === "corte + barba + sobrancelha") return comboImage;
     return undefined;
   };
 
