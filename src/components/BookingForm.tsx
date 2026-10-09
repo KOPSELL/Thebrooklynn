@@ -118,7 +118,7 @@ const BookingForm = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from("services").select("*");
       if (error) throw error;
-      const normalize = (name: string) => name.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").trim().toLowerCase().replace(/\\s+/g, " ");
+      const normalize = (name: string) => name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
       const order = ["corte", "corte + barba + sobrancelha", "barba", "sobrancelha"];
       return (data ?? [])
         .filter((service) => order.includes(normalize(service.name)))
