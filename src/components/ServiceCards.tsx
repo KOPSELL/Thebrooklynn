@@ -2,18 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Clock } from "lucide-react";
 import corteImage from "@/assets/corte-service.png";
-import luzesImage from "@/assets/luzes-service.png";
 import barbaImage from "@/assets/barba-service.png";
+import sobrancelhaImage from "@/assets/WhatsApp Image 2026-10-09 at 13.47.26.jpeg";
 
-const serviceImages: Record<string, string> = {
-  "Corte": corteImage,
-  "Luzes": luzesImage,
-  "Barba": barbaImage,
-};
-
-const serviceIcons: Record<string, string> = {
-  "Corte + Barba": "💈",
-};
+const normalize = (name: string) =>
+  name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
 
 const ServiceCards = () => {
   const { data: services } = useQuery({
@@ -21,10 +14,8 @@ const ServiceCards = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from("services").select("*");
       if (error) throw error;
-      const normalize = (name: string) => name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
       const order = ["corte", "corte + barba + sobrancelha", "barba", "sobrancelha"];
       const matching = (data ?? []).filter((service) => order.includes(normalize(service.name)));
-      // Prioriza o cadastro específico desta barbearia e elimina serviços duplicados pelo nome.
       matching.sort((first, second) => {
         const firstScoped = first.barbershop_id === "836d4853-d45e-44cb-9b87-14b88fc0fe48" ? 0 : 1;
         const secondScoped = second.barbershop_id === "836d4853-d45e-44cb-9b87-14b88fc0fe48" ? 0 : 1;
@@ -40,6 +31,14 @@ const ServiceCards = () => {
     },
   });
 
+  const getServiceImage = (name: string) => {
+    const normalized = normalize(name);
+    if (normalized === "sobrancelha") return sobrancelhaImage;
+    if (normalized === "corte") return corteImage;
+    if (normalized === "barba" || normalized === "corte + barba + sobrancelha") return barbaImage;
+    return undefined;
+  };
+
   return (
     <section className="py-10 md:py-12 px-3 md:px-4">
       <div className="max-w-5xl mx-auto">
@@ -50,30 +49,33 @@ const ServiceCards = () => {
           Qualidade e estilo em cada detalhe
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
-          {services?.map((service) => (
-            <div
-              key={service.id}
-              className="bg-card border border-border rounded-xl p-4 md:p-5 text-center hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 group"
-            >
-              {serviceImages[service.name] ? (
-                <div className="w-14 h-14 mx-auto mb-3 rounded-full overflow-hidden border-2 border-primary/30">
-                  <img src={serviceImages[service.name]} alt={service.name} className="w-full h-full object-cover" />
-                </div>
-              ) : (
-                <div className="text-3xl mb-3">{serviceIcons[service.name] || "💈"}</div>
-              )}
-              <h3 className="font-semibold text-base md:text-lg mb-1 group-hover:text-primary transition-colors">
-                {service.name.toLowerCase() === "corte + barba + sobrancelha" ? "Corte + sobrancelha e barba" : service.name}
-              </h3>
-              <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mb-2">
-                <Clock className="w-3 h-3" />
-                {service.duration_minutes} min
-              </p>
-              <p className="text-xl font-bold text-primary">
-                R$ {Number(service.price).toFixed(2)}
-              </p>
-            </div>
-          ))}
+          {services?.map((service) => {
+            const image = getServiceImage(service.name);
+            return (
+              <div
+                key={service.id}
+                className="bg-card border border-border rounded-xl p-4 md:p-5 text-center hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 group"
+              >
+                {image ? (
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-full overflow-hidden border-2 border-primary/30">
+                    <img src={image} alt={service.name} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                ) : (
+                  <div className="text-3xl mb-3">💈</div>
+                )}
+                <h3 className="font-semibold text-base md:text-lg mb-1 group-hover:text-primary transition-colors">
+                  {normalize(service.name) === "corte + barba + sobrancelha" ? "Corte + sobrancelha e barba" : service.name}
+                </h3>
+                <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mb-2">
+                  <Clock className="w-3 h-3" />
+                  {service.duration_minutes} min
+                </p>
+                <p className="text-xl font-bold text-primary">
+                  R$ {Number(service.price).toFixed(2)}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
