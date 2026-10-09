@@ -7,7 +7,7 @@ const HeroSection = () => {
         <img
           src={logoImage}
           alt="Thebrooklynn Barbearia"
-          className="w-full max-w-[min(82vw,520px)] h-auto object-contain"
+          className="w-full max-w-[min(68vw,360px)] h-auto object-contain"
           fetchPriority="high"
         />
       </div>
