@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Clock } from "lucide-react";
 import corteImage from "@/assets/WhatsApp Image 2026-10-05 at 10.22.15.jpeg";
-import barbaImage from "@/assets/corte e barba.jpeg";
+import barbaImage from "@/assets/barba-service.png";
 import sobrancelhaImage from "@/assets/sobrancelha.webp";
 
 const normalize = (name: string) =>
