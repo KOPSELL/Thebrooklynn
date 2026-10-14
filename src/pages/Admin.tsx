@@ -30,7 +30,7 @@ import { Link } from "react-router-dom";
 
 const Admin = () => {
   const queryClient = useQueryClient();
-  const [isAuthed, setIsAuthed] = useState(() => sessionStorage.getItem("the_brooklyn_admin") === "1");
+  const [isAuthed, setIsAuthed] = useState(() => localStorage.getItem("the_brooklyn_admin") === "1");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [filterBarber, setFilterBarber] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
