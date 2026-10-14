@@ -101,7 +101,7 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
     monthlyAppointments?.forEach((a) => {
       const barberId = a.barber_id;
       const barberName = (a.barbers as any)?.name || "Desconhecido";
-      const price = Number((a.services as any)?.price || 0);
+      const price = Number((a as any).final_price ?? (a.services as any)?.price ?? 0);
       if (!map[barberId]) map[barberId] = { name: barberName, count: 0, total: 0 };
       map[barberId].count++;
       map[barberId].total += price;
