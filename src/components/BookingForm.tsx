@@ -14,7 +14,7 @@ import { toast } from "sonner";
 const THEBROOKLYNN_BARBERSHOP_ID = "836d4853-d45e-44cb-9b87-14b88fc0fe48";
 const THEBROOKLYNN_ONESIGNAL_APP_ID = "6e736ec1-785c-48da-9b6e-c461a926c3c2";
 
-const normalizeServiceName = (name: string) => name.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").trim().toLowerCase().replace(/\\s+/g, " ");
+const normalizeServiceName = (name: string) => name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
 const getServiceDuration = (service: { name: string; duration_minutes: number }) =>
   normalizeServiceName(service.name) === "corte" ? 60 : Number(service.duration_minutes) || 30;
 
