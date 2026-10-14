@@ -9,6 +9,9 @@ import sobrancelhaImage from "@/assets/sobrancelha.webp";
 const normalize = (name: string) =>
   name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
 
+const getServiceDuration = (service: { name: string; duration_minutes: number }) =>
+  normalize(service.name) === "corte" ? 60 : Number(service.duration_minutes) || 30;
+
 const ServiceCards = () => {
   const { data: services } = useQuery({
     queryKey: ["services"],
