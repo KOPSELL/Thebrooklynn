@@ -95,7 +95,7 @@ const saveOneSignalSubscription = async (barberId: string) => {
 const TIME_SLOTS = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
   "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
-  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30",
+  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
 ];
 
 const BookingForm = () => {
@@ -157,6 +157,21 @@ const BookingForm = () => {
     enabled: !!selectedBarber && !!selectedDate,
   });
 
+  const { data: scheduleBlocks } = useQuery({
+    queryKey: ["schedule-blocks", selectedDate ? format(selectedDate, "yyyy-MM-dd") : null],
+    queryFn: async () => {
+      if (!selectedDate) return [];
+      const { data, error } = await supabase
+        .from("barbershop_schedule_blocks")
+        .select("id, block_date, start_time, end_time, all_day, reason")
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .eq("block_date", format(selectedDate, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!selectedDate,
+  });
+
   // Qualquer agendamento ativo bloqueia o horário, mesmo que esteja com status
   // diferente de "confirmed". Só libera horários explicitamente cancelados.
   const isTimeUnavailable = (time: string) => {
@@ -164,6 +179,17 @@ const BookingForm = () => {
     const candidateStart = hour * 60 + minute;
     const selectedServiceData = services?.find((service) => service.id === selectedService);
     const candidateEnd = candidateStart + (selectedServiceData ? getServiceDuration(selectedServiceData) : 30);
+
+    const blockedByAdmin = (scheduleBlocks ?? []).some((block) => {
+      if (block.all_day) return true;
+      if (!block.start_time || !block.end_time) return false;
+      const [startHour, startMinute] = String(block.start_time).slice(0, 5).split(":").map(Number);
+      const [endHour, endMinute] = String(block.end_time).slice(0, 5).split(":").map(Number);
+      const blockStart = startHour * 60 + startMinute;
+      const blockEnd = endHour * 60 + endMinute;
+      return candidateStart < blockEnd && blockStart < candidateEnd;
+    });
+    if (blockedByAdmin) return true;
 
     return (existingAppointments ?? []).some((appointment) => {
       if (["cancelled", "canceled", "cancelado", "cancelada"].includes(
@@ -260,11 +286,20 @@ const BookingForm = () => {
 
   const selectedBarberName = barbers?.find((b) => b.id === selectedBarber)?.name;
   const selectedServiceData = services?.find((s) => s.id === selectedService);
-  // Para serviços de 60 minutos, mostrar horários de hora em hora.
+  // De segunda a sexta, os atendimentos podem terminar até as 20h.
+  // Aos sábados e domingos, mantemos os horários anteriores.
+  const isWeekday = !!selectedDate && selectedDate.getDay() >= 1 && selectedDate.getDay() <= 5;
+  const selectedDuration = selectedServiceData ? getServiceDuration(selectedServiceData) : 30;
+  const scheduledTimeSlots = TIME_SLOTS.filter((time) => {
+    const [hour, minute] = time.split(":").map(Number);
+    const start = hour * 60 + minute;
+    if (isWeekday) return start + selectedDuration <= 20 * 60;
+    return start < 19 * 60;
+  });
   const availableTimeSlots =
-    selectedServiceData && getServiceDuration(selectedServiceData) >= 60
-      ? TIME_SLOTS.filter((time) => time.endsWith(":00"))
-      : TIME_SLOTS;
+    selectedServiceData && selectedDuration >= 60
+      ? scheduledTimeSlots.filter((time) => time.endsWith(":00"))
+      : scheduledTimeSlots;
 
   return (
     <section id="booking" className="py-16 px-4">
