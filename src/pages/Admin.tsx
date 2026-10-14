@@ -78,6 +78,21 @@ const Admin = () => {
     enabled: isAuthed,
   });
 
+  const { data: dailyAppointments, isLoading: isLoadingDailyAppointments } = useQuery({
+    queryKey: ["admin-daily-appointments", format(selectedDate, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, client_name, appointment_time, status")
+        .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
+        .neq("status", "cancelled")
+        .order("appointment_time", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: isAuthed,
+  });
+
   const { data: scheduleBlocks, isLoading: isLoadingBlocks } = useQuery({
     queryKey: ["admin-schedule-blocks", format(selectedDate, "yyyy-MM-dd")],
     queryFn: async () => {
@@ -205,12 +220,15 @@ const Admin = () => {
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         {/* Tabs */}
         <Tabs defaultValue="agenda" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-card border border-border">
+          <TabsList className="grid w-full grid-cols-3 bg-card border border-border">
             <TabsTrigger value="agenda" className="gap-2 data-[state=active]:bg-primary/20">
               <ClipboardList className="w-4 h-4" /> Agenda
             </TabsTrigger>
             <TabsTrigger value="financeiro" className="gap-2 data-[state=active]:bg-primary/20">
               <DollarSign className="w-4 h-4" /> Financeiro
+            </TabsTrigger>
+            <TabsTrigger value="atendimentos" className="gap-2 data-[state=active]:bg-primary/20">
+              <Clock className="w-4 h-4" /> Atendimentos do dia
             </TabsTrigger>
           </TabsList>
 
@@ -407,6 +425,60 @@ const Admin = () => {
 
           <TabsContent value="financeiro">
             <AdminFinancial barbers={barbers} />
+          </TabsContent>
+
+          <TabsContent value="atendimentos" className="space-y-4">
+            <section className="bg-card border border-border rounded-xl p-4 md:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold">Atendimentos do dia</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border bg-background px-4 py-2 text-sm">
+                  <span className="text-muted-foreground">Total de atendimentos: </span>
+                  <strong>{isLoadingDailyAppointments ? "…" : dailyAppointments?.length ?? 0}</strong>
+                </div>
+              </div>
+
+              {isLoadingDailyAppointments ? (
+                <div className="py-10 text-center text-muted-foreground">Carregando atendimentos...</div>
+              ) : !dailyAppointments?.length ? (
+                <div className="py-12 text-center">
+                  <ClipboardList className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
+                  <p className="font-medium">Nenhum atendimento agendado para esta data.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Escolha outra data no calendário acima para consultar a agenda.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border border-border">
+                  <table className="w-full min-w-[280px] border-collapse text-left">
+                    <thead className="bg-secondary/60">
+                      <tr>
+                        <th className="w-28 border-b border-border px-4 py-3 text-sm font-semibold">Horário</th>
+                        <th className="border-b border-border px-4 py-3 text-sm font-semibold">Nome do cliente</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dailyAppointments.map((appointment, index) => (
+                        <tr key={appointment.id} className={cn(
+                          "border-b border-border last:border-b-0",
+                          index % 2 === 0 ? "bg-card" : "bg-secondary/20"
+                        )}>
+                          <td className="whitespace-nowrap px-4 py-3">
+                            <span className="inline-flex min-w-16 items-center justify-center rounded-md bg-primary/15 px-3 py-1 font-bold tabular-nums text-primary">
+                              {String(appointment.appointment_time).slice(0, 5)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-medium">{appointment.client_name}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">A lista está organizada do primeiro ao último horário e não exibe agendamentos cancelados.</p>
+            </section>
           </TabsContent>
         </Tabs>
       </div>
