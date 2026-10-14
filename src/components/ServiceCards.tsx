@@ -70,7 +70,7 @@ const ServiceCards = () => {
                 </h3>
                 <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mb-2">
                   <Clock className="w-3 h-3" />
-                  {service.duration_minutes} min
+                  {getServiceDuration(service)} min
                 </p>
                 <p className="text-xl font-bold text-primary">
                   R$ {Number(service.price).toFixed(2)}
