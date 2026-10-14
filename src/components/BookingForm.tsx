@@ -144,17 +144,22 @@ const BookingForm = () => {
       if (!selectedBarber || !selectedDate) return [];
       const { data, error } = await supabase
         .from("appointments")
-        .select("appointment_time")
+        .select("appointment_time, status")
         .eq("barber_id", selectedBarber)
-        .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
-        .eq("status", "confirmed");
+        .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"));
       if (error) throw error;
       return data;
     },
     enabled: !!selectedBarber && !!selectedDate,
   });
 
-  const bookedTimes = existingAppointments?.map((a) => a.appointment_time.slice(0, 5)) || [];
+  // Qualquer agendamento ativo bloqueia o horário, mesmo que esteja com status
+  // diferente de "confirmed". Só libera horários explicitamente cancelados.
+  const bookedTimes = existingAppointments
+    ?.filter((a) => !["cancelled", "canceled", "cancelado", "cancelada"].includes(
+      String(a.status ?? "").trim().toLowerCase()
+    ))
+    .map((a) => String(a.appointment_time).slice(0, 5)) || [];
 
   const mutation = useMutation({
     mutationFn: async () => {
