@@ -16,7 +16,7 @@ const AdminLogin = ({ onAuth }: AdminLoginProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === ADMIN_HASH) {
-      sessionStorage.setItem("the_brooklyn_admin", "1");
+      localStorage.setItem("the_brooklyn_admin", "1");
       onAuth();
     } else {
       setError(true);
