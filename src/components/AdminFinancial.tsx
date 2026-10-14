@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth, endOfMonth, isToday } from "date-fns";
@@ -7,14 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import {
-  CalendarIcon,
-  TrendingUp,
-  DollarSign,
-  Scissors,
-  Trophy,
-  Star,
-  Flame,
-  Filter,
+  CalendarIcon, TrendingUp, DollarSign, Scissors, Trophy, Filter,
+  Users, ClipboardList, Clock, ChevronLeft, ChevronRight, CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,284 +21,229 @@ interface AdminFinancialProps {
   barbers: Barber[] | undefined;
 }
 
-const getMotivationalMessage = (total: number) => {
-  if (total >= 5000) return { msg: "🔥 MÊS LENDÁRIO! Vocês são monstros!", icon: Flame, color: "text-orange-400" };
-  if (total >= 3000) return { msg: "🏆 Mês incrível! Continuem assim, reis!", icon: Trophy, color: "text-yellow-400" };
-  if (total >= 2000) return { msg: "⭐ Ótimo mês! O patrão tá orgulhoso!", icon: Star, color: "text-primary" };
-  if (total >= 1000) return { msg: "💪 Bom trabalho! Bora bater a meta!", icon: TrendingUp, color: "text-emerald-400" };
-  return { msg: "📈 Início de mês! Bora pra cima que o mês é nosso!", icon: TrendingUp, color: "text-muted-foreground" };
-};
+type PeriodMode = "day" | "month";
+
+const money = (value: number) =>
+  value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
-  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [filterBarber, setFilterBarber] = useState<string | null>(null);
+  const [periodMode, setPeriodMode] = useState<PeriodMode>("day");
+  const dateKey = format(selectedDate, "yyyy-MM-dd");
+  const rangeStart = format(periodMode === "day" ? selectedDate : startOfMonth(selectedDate), "yyyy-MM-dd");
+  const rangeEnd = format(periodMode === "day" ? selectedDate : endOfMonth(selectedDate), "yyyy-MM-dd");
 
-  const monthStart = format(startOfMonth(selectedMonth), "yyyy-MM-dd");
-  const monthEnd = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
-  const todayStr = format(new Date(), "yyyy-MM-dd");
-
-  // Monthly appointments (completed only)
-  const { data: monthlyAppointments } = useQuery({
-    queryKey: ["financial-monthly", monthStart, monthEnd],
+  const { data: appointments, isLoading, isError, error, refetch, isFetching } = useQuery({
+    queryKey: ["financial-detail", rangeStart, rangeEnd],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("*, barbers(name), services(name, price)")
+        .select("id, client_name, client_phone, appointment_date, appointment_time, status, final_price, barber_id, barbers(name), services(name, price)")
         .eq("status", "completed")
-        .gte("appointment_date", monthStart)
-        .lte("appointment_date", monthEnd)
-        .order("appointment_date", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Today's completed appointments
-  const { data: todayAppointments } = useQuery({
-    queryKey: ["financial-today", todayStr],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("appointments")
-        .select("*, barbers(name), services(name, price)")
-        .eq("status", "completed")
-        .eq("appointment_date", todayStr)
+        .gte("appointment_date", rangeStart)
+        .lte("appointment_date", rangeEnd)
+        .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true });
       if (error) throw error;
       return data;
     },
   });
 
-  const filtered = filterBarber
-    ? monthlyAppointments?.filter((a) => a.barber_id === filterBarber)
-    : monthlyAppointments;
+  const filtered = useMemo(
+    () => (appointments ?? []).filter((a) => !filterBarber || a.barber_id === filterBarber),
+    [appointments, filterBarber],
+  );
+  const amount = (a: (typeof filtered)[number]) =>
+    Number((a as any).final_price ?? (a.services as any)?.price ?? 0);
+  const total = filtered.reduce((sum, a) => sum + amount(a), 0);
+  const average = filtered.length ? total / filtered.length : 0;
+  const uniqueClients = new Set(filtered.map((a) => a.client_phone || a.client_name)).size;
 
-  const todayFiltered = filterBarber
-    ? todayAppointments?.filter((a) => a.barber_id === filterBarber)
-    : todayAppointments;
-
-  // Service breakdown
-  const serviceBreakdown = (data: typeof filtered) => {
-    const map: Record<string, { count: number; total: number }> = {};
-    data?.forEach((a) => {
-      const name = (a.services as any)?.name || "Outro";
-      const price = Number((a as any).final_price ?? (a.services as any)?.price ?? 0);
-      if (!map[name]) map[name] = { count: 0, total: 0 };
-      map[name].count++;
-      map[name].total += price;
+  const serviceStats = useMemo(() => {
+    const map = new Map<string, { count: number; total: number }>();
+    filtered.forEach((a) => {
+      const name = (a.services as any)?.name || "Serviço não informado";
+      const item = map.get(name) ?? { count: 0, total: 0 };
+      item.count += 1;
+      item.total += amount(a);
+      map.set(name, item);
     });
-    return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
-  };
+    return [...map.entries()].sort((a, b) => b[1].total - a[1].total);
+  }, [filtered]);
 
-  // Barber breakdown
-  const barberBreakdown = () => {
-    const map: Record<string, { name: string; count: number; total: number }> = {};
-    monthlyAppointments?.forEach((a) => {
-      const barberId = a.barber_id;
-      const barberName = (a.barbers as any)?.name || "Desconhecido";
-      const price = Number((a as any).final_price ?? (a.services as any)?.price ?? 0);
-      if (!map[barberId]) map[barberId] = { name: barberName, count: 0, total: 0 };
-      map[barberId].count++;
-      map[barberId].total += price;
+  const barberStats = useMemo(() => {
+    const map = new Map<string, { name: string; count: number; total: number }>();
+    filtered.forEach((a) => {
+      const id = a.barber_id;
+      const name = (a.barbers as any)?.name || "Barbeiro não informado";
+      const item = map.get(id) ?? { name, count: 0, total: 0 };
+      item.count += 1;
+      item.total += amount(a);
+      map.set(id, item);
     });
-    return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
-  };
+    return [...map.entries()].sort((a, b) => b[1].total - a[1].total);
+  }, [filtered]);
 
-  const monthlyTotal = filtered?.reduce((sum, a) => sum + Number((a as any).final_price ?? (a.services as any)?.price ?? 0), 0) || 0;
-  const todayTotal = todayFiltered?.reduce((sum, a) => sum + Number((a as any).final_price ?? (a.services as any)?.price ?? 0), 0) || 0;
-  const monthlyServices = serviceBreakdown(filtered);
-  const todayServices = serviceBreakdown(todayFiltered);
-  const barberStats = barberBreakdown();
-  const motivation = getMotivationalMessage(monthlyTotal);
-  const MotivationIcon = motivation.icon;
+  const periodLabel = periodMode === "day"
+    ? format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+    : format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR });
+
+  const shiftDate = (direction: number) => {
+    const next = new Date(selectedDate);
+    if (periodMode === "day") next.setDate(next.getDate() + direction);
+    else next.setMonth(next.getMonth() + direction);
+    setSelectedDate(next);
+  };
 
   return (
     <div className="space-y-6">
-      {/* Month selector + filter */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-primary" />
-          <span className="text-gold-gradient">Fechamento Financeiro</span>
-        </h2>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <CalendarIcon className="w-4 h-4" />
-              {format(selectedMonth, "MMMM yyyy", { locale: ptBR })}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="end">
-            <Calendar
-              mode="single"
-              selected={selectedMonth}
-              onSelect={(d) => d && setSelectedMonth(d)}
-              className="p-3 pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
+      <section className="rounded-xl border border-border bg-card p-4 md:p-5 space-y-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-primary" />
+            <span className="text-gold-gradient">Relatório Financeiro</span>
+          </h2>
+          <p className="text-sm text-muted-foreground">Escolha se quer ver um dia específico ou o mês inteiro. Todos os valores abaixo consideram apenas atendimentos concluídos.</p>
+        </div>
 
-      {/* Barber filter */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Filter className="w-4 h-4 text-muted-foreground" />
-        <Button
-          variant={filterBarber === null ? "default" : "outline"}
-          size="sm"
-          onClick={() => setFilterBarber(null)}
-          className={filterBarber === null ? "bg-gold-gradient text-primary-foreground" : ""}
-        >
-          Todos
-        </Button>
-        {barbers?.map((b) => (
-          <Button
-            key={b.id}
-            variant={filterBarber === b.id ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilterBarber(b.id)}
-            className={filterBarber === b.id ? "bg-gold-gradient text-primary-foreground" : ""}
-          >
-            {b.name}
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant={periodMode === "day" ? "default" : "outline"} onClick={() => setPeriodMode("day")} className={periodMode === "day" ? "bg-gold-gradient text-primary-foreground" : ""}>
+            <CalendarDays className="mr-2 h-4 w-4" /> Dia específico
           </Button>
-        ))}
-      </div>
-
-      {/* Motivational message */}
-      <div className={cn(
-        "bg-card border border-border rounded-xl p-4 flex items-center gap-3",
-        monthlyTotal >= 3000 && "border-primary/40"
-      )}>
-        <MotivationIcon className={cn("w-8 h-8 shrink-0", motivation.color)} />
-        <div>
-          <p className="font-bold text-lg">{motivation.msg}</p>
-          <p className="text-sm text-muted-foreground">
-            Faturamento do mês: <span className="text-primary font-bold text-base">R$ {monthlyTotal.toFixed(2)}</span>
-          </p>
+          <Button variant={periodMode === "month" ? "default" : "outline"} onClick={() => setPeriodMode("month")} className={periodMode === "month" ? "bg-gold-gradient text-primary-foreground" : ""}>
+            <CalendarIcon className="mr-2 h-4 w-4" /> Mês inteiro
+          </Button>
         </div>
-      </div>
 
-      {/* Today's closing */}
-      <div className="bg-card border border-border rounded-xl p-5">
-        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-          <Scissors className="w-5 h-5 text-primary" />
-          Fechamento de Hoje
-        </h3>
-        {todayServices.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Nenhum serviço concluído hoje</p>
-        ) : (
-          <>
-            <div className="space-y-2 mb-4">
-              {todayServices.map(([name, data]) => (
-                <div key={name} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{name}</span>
-                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                      {data.count}x
-                    </span>
-                  </div>
-                  <span className="font-bold text-primary">R$ {data.total.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between items-center pt-2 border-t border-primary/30">
-              <span className="font-bold text-lg">Total do Dia</span>
-              <span className="font-bold text-xl text-primary">R$ {todayTotal.toFixed(2)}</span>
-            </div>
-          </>
-        )}
-      </div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <Button variant="outline" size="icon" aria-label="Período anterior" onClick={() => shiftDate(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="justify-start gap-2 flex-1 min-w-0">
+                <CalendarIcon className="h-4 w-4 shrink-0" />
+                <span className="truncate capitalize">{periodLabel}</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar mode="single" selected={selectedDate} onSelect={(date) => date && setSelectedDate(date)} className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <Button variant="outline" size="icon" aria-label="Próximo período" onClick={() => shiftDate(1)}><ChevronRight className="h-4 w-4" /></Button>
+          <Button variant="secondary" onClick={() => setSelectedDate(new Date())}>Hoje</Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Período consultado: {format(new Date(rangeStart + "T12:00:00"), "dd/MM/yyyy")} a {format(new Date(rangeEnd + "T12:00:00"), "dd/MM/yyyy")}
+        </p>
 
-      {/* Monthly breakdown by service */}
-      <div className="bg-card border border-border rounded-xl p-5">
-        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-primary" />
-          Detalhamento do Mês — {format(selectedMonth, "MMMM yyyy", { locale: ptBR })}
-        </h3>
-        {monthlyServices.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Nenhum serviço concluído neste mês</p>
-        ) : (
-          <>
-            <div className="space-y-3 mb-4">
-              {monthlyServices.map(([name, data]) => {
-                const percentage = monthlyTotal > 0 ? (data.total / monthlyTotal) * 100 : 0;
-                return (
-                  <div key={name}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{name}</span>
-                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                          {data.count} serviços
-                        </span>
-                      </div>
-                      <span className="font-bold text-primary">R$ {data.total.toFixed(2)}</span>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-2">
-                      <div
-                        className="bg-gold-gradient h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex justify-between items-center pt-3 border-t border-primary/30">
-              <span className="font-bold text-lg">Total do Mês</span>
-              <span className="font-bold text-2xl text-primary">R$ {monthlyTotal.toFixed(2)}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {filtered?.length || 0} serviços concluídos
-            </p>
-          </>
-        )}
-      </div>
+        <div className="flex items-center gap-2 flex-wrap border-t border-border pt-4">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground mr-1">Barbeiro:</span>
+          <Button variant={filterBarber === null ? "default" : "outline"} size="sm" onClick={() => setFilterBarber(null)} className={filterBarber === null ? "bg-gold-gradient text-primary-foreground" : ""}>Todos</Button>
+          {barbers?.map((barber) => (
+            <Button key={barber.id} variant={filterBarber === barber.id ? "default" : "outline"} size="sm" onClick={() => setFilterBarber(barber.id)} className={filterBarber === barber.id ? "bg-gold-gradient text-primary-foreground" : ""}>{barber.name}</Button>
+          ))}
+        </div>
+      </section>
 
-      {/* Per-barber breakdown */}
-      {!filterBarber && (
-        <div className="bg-card border border-border rounded-xl p-5">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-primary" />
-            Faturamento por Barbeiro — {format(selectedMonth, "MMMM yyyy", { locale: ptBR })}
-          </h3>
-          {barberStats.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Nenhum dado disponível</p>
-          ) : (
-            <div className="space-y-4">
-              {barberStats.map(([id, data], index) => {
-                const totalAll = barberStats.reduce((s, [, d]) => s + d.total, 0);
-                const percentage = totalAll > 0 ? (data.total / totalAll) * 100 : 0;
-                return (
-                  <div key={id} className={cn(
-                    "p-4 rounded-lg border",
-                    index === 0 ? "border-primary/40 bg-primary/5" : "border-border"
-                  )}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {index === 0 && <Trophy className="w-4 h-4 text-primary" />}
-                        <span className="font-bold text-lg">{data.name}</span>
-                      </div>
-                      <span className="font-bold text-xl text-primary">R$ {data.total.toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                      <span>{data.count} serviços concluídos</span>
-                      <span>{percentage.toFixed(0)}% do total</span>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-2">
-                      <div
-                        className="bg-gold-gradient h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-              <div className="flex justify-between items-center pt-3 border-t border-primary/30">
-                <span className="font-bold text-lg">Total Geral</span>
-                <span className="font-bold text-2xl text-primary">
-                  R$ {barberStats.reduce((s, [, d]) => s + d.total, 0).toFixed(2)}
-                </span>
+      {isLoading ? (
+        <div className="rounded-xl border border-border bg-card p-10 text-center text-muted-foreground">Carregando relatório...</div>
+      ) : isError ? (
+        <div className="rounded-xl border border-destructive/40 bg-card p-6 space-y-3">
+          <p className="font-semibold">Não foi possível carregar o relatório financeiro.</p>
+          <p className="text-sm text-muted-foreground">{error instanceof Error ? error.message : "Verifique sua conexão e tente novamente."}</p>
+          <Button variant="outline" onClick={() => refetch()}>Tentar novamente</Button>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h3 className="text-lg font-bold capitalize">{periodMode === "day" ? "Resumo do dia" : "Resumo do mês"} — {periodLabel}</h3>
+              <p className="text-sm text-muted-foreground">{filterBarber ? `Filtro: ${barbers?.find((b) => b.id === filterBarber)?.name ?? "barbeiro selecionado"}` : "Todos os barbeiros"} · somente concluídos</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>{isFetching ? "Atualizando..." : "Atualizar dados"}</Button>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-primary/30 bg-card p-4">
+              <DollarSign className="h-5 w-5 text-primary mb-2" />
+              <p className="text-xs text-muted-foreground">Faturamento no período</p>
+              <p className="text-xl md:text-2xl font-bold text-primary break-words">{money(total)}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <ClipboardList className="h-5 w-5 text-muted-foreground mb-2" />
+              <p className="text-xs text-muted-foreground">Atendimentos concluídos</p>
+              <p className="text-2xl font-bold">{filtered.length}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <Users className="h-5 w-5 text-muted-foreground mb-2" />
+              <p className="text-xs text-muted-foreground">Clientes únicos</p>
+              <p className="text-2xl font-bold">{uniqueClients}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <TrendingUp className="h-5 w-5 text-muted-foreground mb-2" />
+              <p className="text-xs text-muted-foreground">Média por atendimento</p>
+              <p className="text-xl md:text-2xl font-bold break-words">{money(average)}</p>
+            </div>
+          </div>
+
+          <section className="rounded-xl border border-border bg-card p-4 md:p-5">
+            <h3 className="font-bold text-lg flex items-center gap-2 mb-4"><ClipboardList className="h-5 w-5 text-primary" />Atendimentos contabilizados</h3>
+            {filtered.length === 0 ? (
+              <div className="py-8 text-center">
+                <Scissors className="h-9 w-9 mx-auto mb-2 text-muted-foreground/50" />
+                <p className="font-medium">Nenhum atendimento concluído neste período</p>
+                <p className="text-sm text-muted-foreground mt-1">Tente outra data, outro mês ou selecione “Todos” os barbeiros.</p>
               </div>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="space-y-3">
+                {filtered.map((apt) => (
+                  <div key={apt.id} className="rounded-lg border border-border p-3 md:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold break-words">{apt.client_name || "Cliente não informado"}</p>
+                        <p className="text-sm text-muted-foreground">{(apt.services as any)?.name || "Serviço não informado"} · {(apt.barbers as any)?.name || "Barbeiro não informado"}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Clock className="h-3 w-3" />{format(new Date(apt.appointment_date + "T12:00:00"), "dd/MM/yyyy")} às {String(apt.appointment_time).slice(0, 5)}{apt.client_phone ? ` · ${apt.client_phone}` : ""}</p>
+                      </div>
+                      <p className="text-lg font-bold text-primary shrink-0">{money(amount(apt))}</p>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-between items-center gap-3 border-t border-primary/30 pt-4">
+                  <div><p className="font-bold text-lg">Total do período</p><p className="text-xs text-muted-foreground">{filtered.length} atendimento(s)</p></div>
+                  <p className="text-2xl font-bold text-primary">{money(total)}</p>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <div className="grid lg:grid-cols-2 gap-4">
+            <section className="rounded-xl border border-border bg-card p-4 md:p-5">
+              <h3 className="font-bold text-lg flex items-center gap-2 mb-4"><Scissors className="h-5 w-5 text-primary" />Faturamento por serviço</h3>
+              {serviceStats.length === 0 ? <p className="text-sm text-muted-foreground">Sem dados para este filtro.</p> : <div className="space-y-4">
+                {serviceStats.map(([name, stat]) => (
+                  <div key={name}>
+                    <div className="flex justify-between gap-3 text-sm mb-1"><span className="font-medium">{name} <span className="text-muted-foreground">({stat.count})</span></span><span className="font-semibold whitespace-nowrap">{money(stat.total)}</span></div>
+                    <div className="h-2 rounded-full bg-secondary overflow-hidden"><div className="h-full rounded-full bg-gold-gradient" style={{ width: `${total ? (stat.total / total) * 100 : 0}%` }} /></div>
+                  </div>
+                ))}
+              </div>}
+            </section>
+
+            <section className="rounded-xl border border-border bg-card p-4 md:p-5">
+              <h3 className="font-bold text-lg flex items-center gap-2 mb-4"><Trophy className="h-5 w-5 text-primary" />Faturamento por barbeiro</h3>
+              {barberStats.length === 0 ? <p className="text-sm text-muted-foreground">Sem dados para este filtro.</p> : <div className="space-y-3">
+                {barberStats.map(([id, stat], index) => (
+                  <div key={id} className="flex items-center justify-between gap-3 border-b border-border pb-3 last:border-0">
+                    <div className="min-w-0"><p className="font-medium">{index === 0 && <Trophy className="inline h-3.5 w-3.5 text-primary mr-1" />}{stat.name}</p><p className="text-xs text-muted-foreground">{stat.count} atendimento(s)</p></div>
+                    <div className="text-right shrink-0"><p className="font-bold text-primary">{money(stat.total)}</p><p className="text-xs text-muted-foreground">{total ? ((stat.total / total) * 100).toFixed(1) : "0.0"}% do período</p></div>
+                  </div>
+                ))}
+              </div>}
+            </section>
+          </div>
+          <p className="text-xs text-muted-foreground">Observação: o relatório usa o valor final registrado no atendimento. Se não houver valor final, utiliza o preço atual cadastrado no serviço.</p>
+        </>
       )}
     </div>
   );
