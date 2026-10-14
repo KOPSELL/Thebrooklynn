@@ -260,6 +260,11 @@ const BookingForm = () => {
 
   const selectedBarberName = barbers?.find((b) => b.id === selectedBarber)?.name;
   const selectedServiceData = services?.find((s) => s.id === selectedService);
+  // Para serviços de 60 minutos, mostrar horários de hora em hora.
+  const availableTimeSlots =
+    selectedServiceData && getServiceDuration(selectedServiceData) >= 60
+      ? TIME_SLOTS.filter((time) => time.endsWith(":00"))
+      : TIME_SLOTS;
 
   return (
     <section id="booking" className="py-16 px-4">
@@ -402,7 +407,7 @@ const BookingForm = () => {
                 <div>
                   <p className="text-sm text-muted-foreground mb-3">Horários disponíveis</p>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {TIME_SLOTS.map((time) => {
+                    {availableTimeSlots.map((time) => {
                       const isBooked = isTimeUnavailable(time);
                       const isPast = selectedDate && isToday(selectedDate) && time <= format(new Date(), "HH:mm");
                       const isDisabled = isBooked || isPast;
