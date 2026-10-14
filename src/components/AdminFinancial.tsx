@@ -90,8 +90,12 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
 
   const shiftDate = (direction: number) => {
     const next = new Date(selectedDate);
-    if (periodMode === "day") next.setDate(next.getDate() + direction);
-    else next.setMonth(next.getMonth() + direction);
+    if (periodMode === "day") {
+      next.setDate(next.getDate() + direction);
+    } else {
+      next.setDate(1);
+      next.setMonth(next.getMonth() + direction);
+    }
     setSelectedDate(next);
   };
 
@@ -125,7 +129,7 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="center">
-              <Calendar mode="single" selected={selectedDate} onSelect={(date) => date && setSelectedDate(date)} className="p-3 pointer-events-auto" />
+              <Calendar mode="single" selected={selectedDate} onSelect={(date) => { if (date) { setSelectedDate(date); setPeriodMode("day"); } }} className="p-3 pointer-events-auto" />
             </PopoverContent>
           </Popover>
           <Button variant="outline" size="icon" aria-label="Próximo período" onClick={() => shiftDate(1)}><ChevronRight className="h-4 w-4" /></Button>
