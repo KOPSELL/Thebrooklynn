@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfMonth, endOfMonth, isToday } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,7 +30,6 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [filterBarber, setFilterBarber] = useState<string | null>(null);
   const [periodMode, setPeriodMode] = useState<PeriodMode>("day");
-  const dateKey = format(selectedDate, "yyyy-MM-dd");
   const rangeStart = format(periodMode === "day" ? selectedDate : startOfMonth(selectedDate), "yyyy-MM-dd");
   const rangeEnd = format(periodMode === "day" ? selectedDate : endOfMonth(selectedDate), "yyyy-MM-dd");
 
