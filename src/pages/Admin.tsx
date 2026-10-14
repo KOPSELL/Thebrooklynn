@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AdminLogin from "@/components/AdminLogin";
 import AdminFinancial from "@/components/AdminFinancial";
+import ClientDetailsDialog from "@/components/ClientDetailsDialog";
 import BarberPushNotifications from "@/components/BarberPushNotifications";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,7 @@ const Admin = () => {
   const [isAuthed, setIsAuthed] = useState(() => sessionStorage.getItem("the_brooklyn_admin") === "1");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [filterBarber, setFilterBarber] = useState<string | null>(null);
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
 
   const { data: barbers } = useQuery({
     queryKey: ["barbers"],
@@ -216,7 +218,7 @@ const Admin = () => {
 
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-semibold text-lg">{apt.client_name}</p>
+                            <button type="button" onClick={() => setSelectedClient(apt as any)} className="font-semibold text-lg text-left hover:text-primary hover:underline underline-offset-4 transition-colors" title="Abrir ficha completa do cliente">{apt.client_name}</button>
                             <span
                               className={cn(
                                 "text-xs px-2 py-0.5 rounded-full border",
@@ -239,7 +241,7 @@ const Admin = () => {
                               {(apt.services as any)?.name}
                             </span>
                             <span className="text-primary font-semibold">
-                              R$ {Number((apt.services as any)?.price || 0).toFixed(2)}
+                              R$ {Number((apt as any).final_price ?? (apt.services as any)?.price ?? 0).toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -276,6 +278,7 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </div>
+      <ClientDetailsDialog appointment={selectedClient} onClose={() => setSelectedClient(null)} />
     </div>
   );
 };
