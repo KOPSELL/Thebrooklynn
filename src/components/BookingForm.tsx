@@ -14,6 +14,10 @@ import { toast } from "sonner";
 const THEBROOKLYNN_BARBERSHOP_ID = "836d4853-d45e-44cb-9b87-14b88fc0fe48";
 const THEBROOKLYNN_ONESIGNAL_APP_ID = "6e736ec1-785c-48da-9b6e-c461a926c3c2";
 
+const normalizeServiceName = (name: string) => name.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").trim().toLowerCase().replace(/\\s+/g, " ");
+const getServiceDuration = (service: { name: string; duration_minutes: number }) =>
+  normalizeServiceName(service.name) === "corte" ? 60 : Number(service.duration_minutes) || 30;
+
 type OneSignalInstance = {
   User?: {
     PushSubscription?: {
@@ -144,7 +148,7 @@ const BookingForm = () => {
       if (!selectedBarber || !selectedDate) return [];
       const { data, error } = await supabase
         .from("appointments")
-        .select("appointment_time, status")
+        .select("appointment_time, status, service_id")
         .eq("barber_id", selectedBarber)
         .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"));
       if (error) throw error;
@@ -155,11 +159,25 @@ const BookingForm = () => {
 
   // Qualquer agendamento ativo bloqueia o horário, mesmo que esteja com status
   // diferente de "confirmed". Só libera horários explicitamente cancelados.
-  const bookedTimes = existingAppointments
-    ?.filter((a) => !["cancelled", "canceled", "cancelado", "cancelada"].includes(
-      String(a.status ?? "").trim().toLowerCase()
-    ))
-    .map((a) => String(a.appointment_time).slice(0, 5)) || [];
+  const isTimeUnavailable = (time: string) => {
+    const [hour, minute] = time.split(":").map(Number);
+    const candidateStart = hour * 60 + minute;
+    const selectedServiceData = services?.find((service) => service.id === selectedService);
+    const candidateEnd = candidateStart + (selectedServiceData ? getServiceDuration(selectedServiceData) : 30);
+
+    return (existingAppointments ?? []).some((appointment) => {
+      if (["cancelled", "canceled", "cancelado", "cancelada"].includes(
+        String(appointment.status ?? "").trim().toLowerCase()
+      )) return false;
+
+      const [bookedHour, bookedMinute] = String(appointment.appointment_time).slice(0, 5).split(":").map(Number);
+      const bookedStart = bookedHour * 60 + bookedMinute;
+      const bookedService = services?.find((service) => service.id === appointment.service_id);
+      const bookedEnd = bookedStart + (bookedService ? getServiceDuration(bookedService) : 30);
+
+      return candidateStart < bookedEnd && bookedStart < candidateEnd;
+    });
+  };
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -325,7 +343,7 @@ const BookingForm = () => {
                       <p className="font-semibold text-lg">{service.name.toLowerCase() === "corte + barba + sobrancelha" ? "Corte + sobrancelha e barba" : service.name}</p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {service.duration_minutes} min
+                        {getServiceDuration(service)} min
                       </p>
                     </div>
                     <p className="text-xl font-bold text-primary">
@@ -385,7 +403,7 @@ const BookingForm = () => {
                   <p className="text-sm text-muted-foreground mb-3">Horários disponíveis</p>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {TIME_SLOTS.map((time) => {
-                      const isBooked = bookedTimes.includes(time);
+                      const isBooked = isTimeUnavailable(time);
                       const isPast = selectedDate && isToday(selectedDate) && time <= format(new Date(), "HH:mm");
                       const isDisabled = isBooked || isPast;
                       return (
