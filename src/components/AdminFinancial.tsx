@@ -87,7 +87,7 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
     const map: Record<string, { count: number; total: number }> = {};
     data?.forEach((a) => {
       const name = (a.services as any)?.name || "Outro";
-      const price = Number((a.services as any)?.price || 0);
+      const price = Number((a as any).final_price ?? (a.services as any)?.price ?? 0);
       if (!map[name]) map[name] = { count: 0, total: 0 };
       map[name].count++;
       map[name].total += price;
@@ -109,8 +109,8 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
     return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
   };
 
-  const monthlyTotal = filtered?.reduce((sum, a) => sum + Number((a.services as any)?.price || 0), 0) || 0;
-  const todayTotal = todayFiltered?.reduce((sum, a) => sum + Number((a.services as any)?.price || 0), 0) || 0;
+  const monthlyTotal = filtered?.reduce((sum, a) => sum + Number((a as any).final_price ?? (a.services as any)?.price ?? 0), 0) || 0;
+  const todayTotal = todayFiltered?.reduce((sum, a) => sum + Number((a as any).final_price ?? (a.services as any)?.price ?? 0), 0) || 0;
   const monthlyServices = serviceBreakdown(filtered);
   const todayServices = serviceBreakdown(todayFiltered);
   const barberStats = barberBreakdown();
