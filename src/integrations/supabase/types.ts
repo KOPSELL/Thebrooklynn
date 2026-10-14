@@ -23,6 +23,7 @@ export type Database = {
           client_phone: string
           created_at: string
           id: string
+          final_price: number | null
           service_id: string
           status: string
         }
@@ -34,6 +35,7 @@ export type Database = {
           client_phone: string
           created_at?: string
           id?: string
+          final_price?: number | null
           service_id: string
           status?: string
         }
@@ -45,6 +47,7 @@ export type Database = {
           client_phone?: string
           created_at?: string
           id?: string
+          final_price?: number | null
           service_id?: string
           status?: string
         }
