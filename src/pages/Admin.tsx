@@ -85,7 +85,6 @@ const Admin = () => {
         .from("appointments")
         .select("id, client_name, appointment_time, status")
         .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
-        .neq("status", "cancelled")
         .order("appointment_time", { ascending: true });
       if (error) throw error;
       return data ?? [];
@@ -470,14 +469,24 @@ const Admin = () => {
                               {String(appointment.appointment_time).slice(0, 5)}
                             </span>
                           </td>
-                          <td className="px-4 py-3 font-medium">{appointment.client_name}</td>
+                          <td className="px-4 py-3 font-medium">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span>{appointment.client_name}</span>
+                              {appointment.status === "cancelled" && (
+                                <span className="rounded-full border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">Cancelado</span>
+                              )}
+                              {appointment.status === "completed" && (
+                                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">Concluído</span>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">A lista está organizada do primeiro ao último horário e não exibe agendamentos cancelados.</p>
+              <p className="text-xs text-muted-foreground">A lista está organizada do primeiro ao último horário e mostra também os próximos atendimentos. Os agendamentos cancelados aparecem identificados como cancelados.</p>
             </section>
           </TabsContent>
         </Tabs>
