@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { addMinutes } from "date-fns";
 import AdminLogin from "@/components/AdminLogin";
 import AdminFinancial from "@/components/AdminFinancial";
 import ClientDetailsDialog from "@/components/ClientDetailsDialog";
@@ -28,12 +29,25 @@ import {
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
+const THEBROOKLYNN_BARBERSHOP_ID = "836d4853-d45e-44cb-9b87-14b88fc0fe48";
+
+const BLOCK_TIMES = [
+  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+  "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
+  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30",
+  "19:00", "19:30",
+];
+
 const Admin = () => {
   const queryClient = useQueryClient();
   const [isAuthed, setIsAuthed] = useState(() => localStorage.getItem("the_brooklyn_admin") === "1");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [filterBarber, setFilterBarber] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  const [blockAllDay, setBlockAllDay] = useState(false);
+  const [blockStart, setBlockStart] = useState("09:00");
+  const [blockEnd, setBlockEnd] = useState("09:30");
+  const [blockReason, setBlockReason] = useState("");
 
   const { data: barbers } = useQuery({
     queryKey: ["barbers"],
@@ -63,6 +77,58 @@ const Admin = () => {
       return data;
     },
     enabled: isAuthed,
+  });
+
+  const { data: scheduleBlocks, isLoading: isLoadingBlocks } = useQuery({
+    queryKey: ["admin-schedule-blocks", format(selectedDate, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("barbershop_schedule_blocks")
+        .select("*")
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .eq("block_date", format(selectedDate, "yyyy-MM-dd"))
+        .order("start_time", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: isAuthed,
+  });
+
+  const createScheduleBlock = useMutation({
+    mutationFn: async () => {
+      if (!blockAllDay && blockEnd <= blockStart) {
+        throw new Error("O horário final precisa ser depois do horário inicial.");
+      }
+      const { error } = await supabase.from("barbershop_schedule_blocks").insert({
+        barbershop_id: THEBROOKLYNN_BARBERSHOP_ID,
+        block_date: format(selectedDate, "yyyy-MM-dd"),
+        start_time: blockAllDay ? null : blockStart,
+        end_time: blockAllDay ? null : blockEnd,
+        all_day: blockAllDay,
+        reason: blockReason.trim() || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-schedule-blocks"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule-blocks"] });
+      setBlockReason("");
+      toast.success(blockAllDay ? "Barbearia fechada neste dia." : "Horário bloqueado com sucesso.");
+    },
+    onError: (error: Error) => toast.error(error.message || "Não foi possível bloquear o horário."),
+  });
+
+  const deleteScheduleBlock = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("barbershop_schedule_blocks").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-schedule-blocks"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule-blocks"] });
+      toast.success("Bloqueio removido; horário liberado.");
+    },
+    onError: () => toast.error("Não foi possível remover o bloqueio."),
   });
 
   const updateStatus = useMutation({
@@ -151,6 +217,73 @@ const Admin = () => {
 
           <TabsContent value="agenda" className="space-y-6">
             <BarberPushNotifications barbers={barbers} />
+
+            <section className="bg-card border border-border rounded-xl p-4 md:p-5 space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold">Bloquear horários e fechar a barbearia</h2>
+                <p className="text-sm text-muted-foreground">
+                  Data selecionada: {format(selectedDate, "dd/MM/yyyy")}. Bloqueios impedem novos agendamentos nesse período.
+                  Agendamentos já existentes devem ser cancelados na agenda.
+                </p>
+              </div>
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={blockAllDay}
+                  onChange={(event) => setBlockAllDay(event.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+                Fechar a barbearia o dia inteiro
+              </label>
+              {!blockAllDay && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="space-y-1 text-sm">
+                    <span className="text-muted-foreground">Bloquear a partir de</span>
+                    <select value={blockStart} onChange={(event) => {
+                      const value = event.target.value;
+                      setBlockStart(value);
+                      const index = BLOCK_TIMES.indexOf(value);
+                      setBlockEnd(BLOCK_TIMES[Math.min(index + 1, BLOCK_TIMES.length - 1)]);
+                    }} className="w-full h-10 rounded-md border border-border bg-background px-3">
+                      {BLOCK_TIMES.slice(0, -1).map((time) => <option key={time} value={time}>{time}</option>)}
+                    </select>
+                  </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="text-muted-foreground">Liberar a partir de / horário final</span>
+                    <select value={blockEnd} onChange={(event) => setBlockEnd(event.target.value)} className="w-full h-10 rounded-md border border-border bg-background px-3">
+                      {BLOCK_TIMES.filter((time) => time > blockStart).map((time) => <option key={time} value={time}>{time}</option>)}
+                    </select>
+                  </label>
+                </div>
+              )}
+              <label className="block space-y-1 text-sm">
+                <span className="text-muted-foreground">Motivo (opcional)</span>
+                <input value={blockReason} onChange={(event) => setBlockReason(event.target.value)} placeholder="Ex.: compromisso, almoço, feriado..." className="w-full h-10 rounded-md border border-border bg-background px-3" />
+              </label>
+              <Button
+                onClick={() => createScheduleBlock.mutate()}
+                disabled={createScheduleBlock.isPending || (!blockAllDay && blockEnd <= blockStart)}
+                className="w-full sm:w-auto bg-gold-gradient text-primary-foreground"
+              >
+                {createScheduleBlock.isPending ? "Salvando..." : blockAllDay ? "Fechar a barbearia nesta data" : "Bloquear este período"}
+              </Button>
+              <div className="border-t border-border pt-4 space-y-2">
+                <h3 className="font-semibold">Bloqueios deste dia</h3>
+                {isLoadingBlocks ? <p className="text-sm text-muted-foreground">Carregando bloqueios...</p> : !scheduleBlocks?.length ? (
+                  <p className="text-sm text-muted-foreground">Nenhum bloqueio para esta data.</p>
+                ) : scheduleBlocks.map((block: any) => (
+                  <div key={block.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg bg-secondary/40 p-3">
+                    <div>
+                      <p className="font-medium">{block.all_day ? "Barbearia fechada o dia inteiro" : `${String(block.start_time).slice(0, 5)}–${String(block.end_time).slice(0, 5)} bloqueado`}</p>
+                      {block.reason && <p className="text-sm text-muted-foreground">Motivo: {block.reason}</p>}
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => deleteScheduleBlock.mutate(block.id)} disabled={deleteScheduleBlock.isPending} className="text-destructive border-destructive/30">
+                      Remover bloqueio
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </section>
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-card border border-border rounded-lg p-4 text-center">
