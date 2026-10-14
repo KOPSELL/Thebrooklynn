@@ -83,7 +83,7 @@ export default function ClientDetailsDialog({ appointment, onClose }: Props) {
   );
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (statusOverride?: string) => {
       if (!appointment) return;
       const normalizedPhone = phone.trim();
       const parsedPrice = Number(price.replace(",", "."));
@@ -97,7 +97,7 @@ export default function ClientDetailsDialog({ appointment, onClose }: Props) {
           appointment_date: date,
           appointment_time: time.length === 5 ? time + ":00" : time,
           final_price: parsedPrice,
-          status,
+          status: statusOverride ?? status,
         } as any)
         .eq("id", appointment.id);
       if (error) throw error;
@@ -165,7 +165,7 @@ export default function ClientDetailsDialog({ appointment, onClose }: Props) {
             <div className="flex flex-wrap gap-2">
               {whatsappUrl && <Button asChild className="gap-2 bg-green-600 hover:bg-green-700"><a href={whatsappUrl} target="_blank" rel="noreferrer"><MessageCircle className="h-4 w-4" /> Chamar no WhatsApp</a></Button>}
               {status !== "completed" && status !== "cancelled" && (
-                <Button variant="outline" className="gap-2" onClick={() => setStatus("completed")}><CheckCircle2 className="h-4 w-4" /> Finalizar atendimento</Button>
+                <Button variant="outline" className="gap-2" onClick={() => saveMutation.mutate("completed")}><CheckCircle2 className="h-4 w-4" /> Finalizar atendimento</Button>
               )}
             </div>
           </section>
