@@ -86,15 +86,41 @@ const Admin = () => {
     enabled: isAuthed,
   });
 
-  // Quando o painel é aberto a partir de uma notificação, abre a ficha
-  // correspondente assim que a agenda daquele dia terminar de carregar.
+  // Ao abrir por uma notificação, busca o agendamento diretamente pelo ID.
+  // Assim, a ficha não depende de a agenda do dia já estar carregada ou filtrada.
   useEffect(() => {
-    if (!isAuthed || !notificationAppointmentId || !appointments) return;
-    const targetAppointment = appointments.find((item: any) => item.id === notificationAppointmentId);
-    if (!targetAppointment) return;
-    setSelectedClient(targetAppointment as any);
-    window.history.replaceState({}, "", window.location.pathname);
-  }, [isAuthed, notificationAppointmentId, appointments]);
+    if (!isAuthed || !notificationAppointmentId) return;
+
+    let cancelled = false;
+    const openNotifiedAppointment = async () => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("*, barbers(name), services(name, duration_minutes, price)")
+        .eq("id", notificationAppointmentId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error("Erro ao abrir agendamento da notificação:", error);
+        toast.error("Não foi possível carregar os detalhes do agendamento.");
+        return;
+      }
+
+      if (!data) {
+        toast.error("Agendamento não encontrado. Confira se está usando o painel da mesma barbearia.");
+        return;
+      }
+
+      setSelectedClient(data as any);
+      window.history.replaceState({}, "", window.location.pathname);
+    };
+
+    void openNotifiedAppointment();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthed, notificationAppointmentId]);
 
   const { data: dailyAppointments, isLoading: isLoadingDailyAppointments } = useQuery({
     queryKey: ["admin-daily-appointments", format(selectedDate, "yyyy-MM-dd")],
