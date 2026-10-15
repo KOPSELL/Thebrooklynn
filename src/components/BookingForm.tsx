@@ -149,6 +149,7 @@ const BookingForm = () => {
       const { data, error } = await supabase
         .from("appointments")
         .select("appointment_time, status, service_id")
+        .eq("barbershop_id", "836d4853-d45e-44cb-9b87-14b88fc0fe48")
         .eq("barber_id", selectedBarber)
         .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"));
       if (error) throw error;
@@ -212,6 +213,7 @@ const BookingForm = () => {
       }
 
       const { data: appointment, error } = await supabase.from("appointments").insert({
+        barbershop_id: "836d4853-d45e-44cb-9b87-14b88fc0fe48",
         barber_id: selectedBarber,
         service_id: selectedService,
         client_name: clientName,
