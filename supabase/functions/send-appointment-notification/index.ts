@@ -115,6 +115,8 @@ const sendExternalOneSignalNotification = async (
         pt: `${record.client_name} agendou para ${record.appointment_date} às ${record.appointment_time.slice(0, 5)}.`,
         en: `${record.client_name} agendou para ${record.appointment_date} às ${record.appointment_time.slice(0, 5)}.`,
       },
+      // Ao tocar na notificação, abre o admin no dia certo e carrega a ficha do cliente.
+      url: `https://thebrooklynn.vercel.app/admin?appointment_id=${record.id}&date=${record.appointment_date}`,
       data: {
         appointment_id: record.id,
         type: "new_appointment",
