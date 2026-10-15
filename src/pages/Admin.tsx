@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AdminLogin from "@/components/AdminLogin";
 import AdminFinancial from "@/components/AdminFinancial";
 import ClientDetailsDialog from "@/components/ClientDetailsDialog";
@@ -40,7 +40,15 @@ const BLOCK_TIMES = [
 const Admin = () => {
   const queryClient = useQueryClient();
   const [isAuthed, setIsAuthed] = useState(() => localStorage.getItem("the_brooklyn_admin") === "1");
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [notificationAppointmentId] = useState(() => new URLSearchParams(window.location.search).get("appointment_id"));
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const dateParam = new URLSearchParams(window.location.search).get("date");
+    if (dateParam) {
+      const parsedDate = new Date(`${dateParam}T12:00:00`);
+      if (!Number.isNaN(parsedDate.getTime())) return parsedDate;
+    }
+    return new Date();
+  });
   const [filterBarber, setFilterBarber] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [blockAllDay, setBlockAllDay] = useState(false);
@@ -77,6 +85,16 @@ const Admin = () => {
     },
     enabled: isAuthed,
   });
+
+  // Quando o painel é aberto a partir de uma notificação, abre a ficha
+  // correspondente assim que a agenda daquele dia terminar de carregar.
+  useEffect(() => {
+    if (!isAuthed || !notificationAppointmentId || !appointments) return;
+    const targetAppointment = appointments.find((item: any) => item.id === notificationAppointmentId);
+    if (!targetAppointment) return;
+    setSelectedClient(targetAppointment as any);
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [isAuthed, notificationAppointmentId, appointments]);
 
   const { data: dailyAppointments, isLoading: isLoadingDailyAppointments } = useQuery({
     queryKey: ["admin-daily-appointments", format(selectedDate, "yyyy-MM-dd")],
