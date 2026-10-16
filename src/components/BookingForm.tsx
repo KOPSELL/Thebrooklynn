@@ -116,7 +116,7 @@ const BookingForm = () => {
         .from("barbers")
         .select("*")
         .eq("active", true)
-        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID);
+        .eq("id", "8b09761e-ef06-47ae-b182-591ff2f40560");
       if (error) throw error;
       return data;
     },
