@@ -59,7 +59,7 @@ const Admin = () => {
   const { data: barbers } = useQuery({
     queryKey: ["barbers"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("barbers").select("*").eq("active", true);
+      const { data, error } = await supabase.from("barbers").select("*").eq("active", true).eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID);
       if (error) throw error;
       return data;
     },
@@ -72,6 +72,7 @@ const Admin = () => {
       let query = supabase
         .from("appointments")
         .select("*, barbers(name), services(name, duration_minutes, price)")
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
         .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
         .order("appointment_time", { ascending: true });
 
@@ -97,6 +98,7 @@ const Admin = () => {
         .from("appointments")
         .select("*, barbers(name), services(name, duration_minutes, price)")
         .eq("id", notificationAppointmentId)
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
         .maybeSingle();
 
       if (cancelled) return;
@@ -128,6 +130,7 @@ const Admin = () => {
       const { data, error } = await supabase
         .from("appointments")
         .select("id, client_name, appointment_time, status")
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
         .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
         .order("appointment_time", { ascending: true });
       if (error) throw error;
@@ -193,7 +196,8 @@ const Admin = () => {
       const { error } = await supabase
         .from("appointments")
         .update({ status })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID);
       if (error) throw error;
     },
     onSuccess: () => {
