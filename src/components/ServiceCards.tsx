@@ -16,7 +16,10 @@ const ServiceCards = () => {
   const { data: services } = useQuery({
     queryKey: ["services"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("*");
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .eq("barbershop_id", "836d4853-d45e-44cb-9b87-14b88fc0fe48");
       if (error) throw error;
       const order = ["corte", "corte + barba + sobrancelha", "barba", "sobrancelha"];
       const matching = (data ?? []).filter((service) => order.includes(normalize(service.name)));
