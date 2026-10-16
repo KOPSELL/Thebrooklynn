@@ -212,16 +212,67 @@ const BookingForm = () => {
         throw new Error("Dados do agendamento incompletos.");
       }
 
+      const appointmentDate = format(selectedDate, "yyyy-MM-dd");
+      const selectedServiceInfo = services?.find((service) => service.id === selectedService);
+      const requestedStart = Number(selectedTime.split(":")[0]) * 60 + Number(selectedTime.split(":")[1]);
+      const requestedEnd = requestedStart + (selectedServiceInfo ? getServiceDuration(selectedServiceInfo) : 30);
+
+      // Reconsulta os agendamentos no momento da confirmação; a lista exibida na tela pode estar desatualizada.
+      const { data: latestAppointments, error: appointmentsError } = await supabase
+        .from("appointments")
+        .select("appointment_time, status, service_id")
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .eq("barber_id", selectedBarber)
+        .eq("appointment_date", appointmentDate);
+      if (appointmentsError) throw appointmentsError;
+
+      const overlapsAppointment = (latestAppointments ?? []).some((appointment) => {
+        if (["cancelled", "canceled", "cancelado", "cancelada"].includes(
+          String(appointment.status ?? "").trim().toLowerCase()
+        )) return false;
+        const [hour, minute] = String(appointment.appointment_time).slice(0, 5).split(":").map(Number);
+        const existingStart = hour * 60 + minute;
+        const bookedService = services?.find((service) => service.id === appointment.service_id);
+        const existingEnd = existingStart + (bookedService ? getServiceDuration(bookedService) : 30);
+        return requestedStart < existingEnd && existingStart < requestedEnd;
+      });
+      if (overlapsAppointment) {
+        throw new Error("HORARIO_JA_OCUPADO");
+      }
+
+      // Também verifica bloqueios administrativos atualizados antes de salvar.
+      const { data: latestBlocks, error: blocksError } = await supabase
+        .from("barbershop_schedule_blocks")
+        .select("start_time, end_time, all_day")
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .eq("block_date", appointmentDate);
+      if (blocksError) throw blocksError;
+      const overlapsBlock = (latestBlocks ?? []).some((block) => {
+        if (block.all_day) return true;
+        if (!block.start_time || !block.end_time) return false;
+        const [startHour, startMinute] = String(block.start_time).slice(0, 5).split(":").map(Number);
+        const [endHour, endMinute] = String(block.end_time).slice(0, 5).split(":").map(Number);
+        const blockStart = startHour * 60 + startMinute;
+        const blockEnd = endHour * 60 + endMinute;
+        return requestedStart < blockEnd && blockStart < requestedEnd;
+      });
+      if (overlapsBlock) {
+        throw new Error("HORARIO_INDISPONIVEL");
+      }
+
       const { data: appointment, error } = await supabase.from("appointments").insert({
-        barbershop_id: "836d4853-d45e-44cb-9b87-14b88fc0fe48",
+        barbershop_id: THEBROOKLYNN_BARBERSHOP_ID,
         barber_id: selectedBarber,
         service_id: selectedService,
         client_name: clientName,
         client_phone: clientPhone,
-        appointment_date: format(selectedDate, "yyyy-MM-dd"),
+        appointment_date: appointmentDate,
         appointment_time: selectedTime,
       }).select("id").single();
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes("HORARIO_JA_OCUPADO")) throw new Error("HORARIO_JA_OCUPADO");
+        throw error;
+      }
 
       // O agendamento já foi salvo. Rode o cadastro do dispositivo e o envio
       // em tarefas separadas: o callback do OneSignal pode não disparar em alguns
@@ -271,7 +322,21 @@ const BookingForm = () => {
       setClientName("");
       setClientPhone("");
     },
-    onError: () => {
+    onError: (error) => {
+      if (error instanceof Error && error.message === "HORARIO_JA_OCUPADO") {
+        toast.error("Esse horário acabou de ser reservado. Escolha outro horário.");
+        queryClient.invalidateQueries({ queryKey: ["appointments"] });
+        setSelectedTime(null);
+        setStep(3);
+        return;
+      }
+      if (error instanceof Error && error.message === "HORARIO_INDISPONIVEL") {
+        toast.error("Esse horário está bloqueado. Escolha outro horário.");
+        queryClient.invalidateQueries({ queryKey: ["schedule-blocks"] });
+        setSelectedTime(null);
+        setStep(3);
+        return;
+      }
       toast.error("Erro ao agendar. Tente novamente.");
     },
   });
