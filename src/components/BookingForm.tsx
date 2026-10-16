@@ -112,7 +112,11 @@ const BookingForm = () => {
   const { data: barbers } = useQuery({
     queryKey: ["barbers"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("barbers").select("*").eq("active", true);
+      const { data, error } = await supabase
+        .from("barbers")
+        .select("*")
+        .eq("active", true)
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID);
       if (error) throw error;
       return data;
     },
@@ -121,7 +125,10 @@ const BookingForm = () => {
   const { data: services } = useQuery({
     queryKey: ["services"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("*");
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID);
       if (error) throw error;
       const normalize = (name: string) => name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
       const order = ["corte", "corte + barba + sobrancelha", "barba", "sobrancelha"];
