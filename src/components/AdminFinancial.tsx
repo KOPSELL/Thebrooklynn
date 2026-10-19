@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { BARBERSHOP_ID } from "@/lib/barbershop";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const THEBROOKLYNN_BARBERSHOP_ID = "836d4853-d45e-44cb-9b87-14b88fc0fe48";
-const WC_CRISTIAN_BARBER_ID = "349e6144-1295-4064-8f5e-ac93cceb48d6";
+const THEBROOKLYNN_BARBERSHOP_ID = BARBERSHOP_ID;
 
 interface Barber {
   id: string;
@@ -41,8 +41,10 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("id, client_name, client_phone, appointment_date, appointment_time, status, final_price, barber_id, barbers(name), services(name, price)")
+        .select("id, client_name, client_phone, appointment_date, appointment_time, status, final_price, barber_id, barbers!inner(name, barbershop_id), services!inner(name, price, barbershop_id)")
         .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .eq("barbers.barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .eq("services.barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
         .eq("status", "completed")
         .gte("appointment_date", rangeStart)
         .lte("appointment_date", rangeEnd)
@@ -54,7 +56,7 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
   });
 
   const filtered = useMemo(
-    () => (appointments ?? []).filter((a) => a.barber_id !== WC_CRISTIAN_BARBER_ID && (!filterBarber || a.barber_id === filterBarber)),
+    () => (appointments ?? []).filter((a) => !filterBarber || a.barber_id === filterBarber),
     [appointments, filterBarber],
   );
   const amount = (a: (typeof filtered)[number]) =>
