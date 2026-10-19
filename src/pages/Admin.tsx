@@ -134,6 +134,7 @@ const Admin = () => {
         .from("appointments")
         .select("id, client_name, appointment_time, status")
         .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .neq("barber_id", WC_CRISTIAN_BARBER_ID)
         .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
         .order("appointment_time", { ascending: true });
       if (error) throw error;
