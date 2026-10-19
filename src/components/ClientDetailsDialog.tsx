@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import { BARBERSHOP_ID } from "@/lib/barbershop";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -58,12 +59,15 @@ export default function ClientDetailsDialog({ appointment, onClose }: Props) {
   }, [appointment]);
 
   const { data: history, isLoading: historyLoading } = useQuery({
-    queryKey: ["client-history", appointment?.client_phone],
+    queryKey: ["client-history", BARBERSHOP_ID, appointment?.client_phone],
     queryFn: async () => {
       if (!appointment?.client_phone) return [];
       const { data, error } = await supabase
         .from("appointments")
-        .select("id, client_name, client_phone, appointment_date, appointment_time, status, final_price, barbers(name), services(name, price)")
+        .select("id, client_name, client_phone, appointment_date, appointment_time, status, final_price, barbers!inner(name, barbershop_id), services!inner(name, price, barbershop_id)")
+        .eq("barbershop_id", BARBERSHOP_ID)
+        .eq("barbers.barbershop_id", BARBERSHOP_ID)
+        .eq("services.barbershop_id", BARBERSHOP_ID)
         .eq("client_phone", appointment.client_phone)
         .order("appointment_date", { ascending: false })
         .order("appointment_time", { ascending: false });
@@ -99,7 +103,8 @@ export default function ClientDetailsDialog({ appointment, onClose }: Props) {
           final_price: parsedPrice,
           status: statusOverride ?? status,
         } as any)
-        .eq("id", appointment.id);
+        .eq("id", appointment.id)
+        .eq("barbershop_id", BARBERSHOP_ID);
       if (error) throw error;
     },
     onSuccess: async () => {
