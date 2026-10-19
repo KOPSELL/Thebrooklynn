@@ -5,6 +5,7 @@ import ClientDetailsDialog from "@/components/ClientDetailsDialog";
 import BarberPushNotifications from "@/components/BarberPushNotifications";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { BARBERSHOP_ID } from "@/lib/barbershop";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
@@ -28,8 +29,7 @@ import {
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
-const THEBROOKLYNN_BARBERSHOP_ID = "836d4853-d45e-44cb-9b87-14b88fc0fe48";
-const WC_CRISTIAN_BARBER_ID = "349e6144-1295-4064-8f5e-ac93cceb48d6";
+const THEBROOKLYNN_BARBERSHOP_ID = BARBERSHOP_ID;
 
 const BLOCK_TIMES = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -60,7 +60,7 @@ const Admin = () => {
   const { data: barbers } = useQuery({
     queryKey: ["barbers", THEBROOKLYNN_BARBERSHOP_ID],
     queryFn: async () => {
-      const { data, error } = await supabase.from("barbers").select("*").eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID).neq("id", WC_CRISTIAN_BARBER_ID);
+      const { data, error } = await supabase.from("barbers").select("*").eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID);
       if (error) throw error;
       return data;
     },
@@ -72,9 +72,10 @@ const Admin = () => {
     queryFn: async () => {
       let query = supabase
         .from("appointments")
-        .select("*, barbers(name), services(name, duration_minutes, price)")
+        .select("*, barbers!inner(name, barbershop_id), services!inner(name, duration_minutes, price, barbershop_id)")
         .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
-        .neq("barber_id", WC_CRISTIAN_BARBER_ID)
+        .eq("barbers.barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .eq("services.barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
         .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
         .order("appointment_time", { ascending: true });
 
@@ -132,7 +133,7 @@ const Admin = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("id, client_name, appointment_time, status")
+        .select("id, client_name, appointment_time, status, barbers!inner(barbershop_id), services!inner(barbershop_id)")
         .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
         .neq("barber_id", WC_CRISTIAN_BARBER_ID)
         .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
