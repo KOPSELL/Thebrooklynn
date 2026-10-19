@@ -99,10 +99,11 @@ const Admin = () => {
     const openNotifiedAppointment = async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("*, barbers(name), services(name, duration_minutes, price)")
+        .select("*, barbers!inner(name, barbershop_id), services!inner(name, duration_minutes, price, barbershop_id)")
         .eq("id", notificationAppointmentId)
         .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
-        .neq("barber_id", WC_CRISTIAN_BARBER_ID)
+        .eq("barbers.barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .eq("services.barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
         .maybeSingle();
 
       if (cancelled) return;
@@ -135,7 +136,8 @@ const Admin = () => {
         .from("appointments")
         .select("id, client_name, appointment_time, status, barbers!inner(barbershop_id), services!inner(barbershop_id)")
         .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
-        .neq("barber_id", WC_CRISTIAN_BARBER_ID)
+        .eq("barbers.barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .eq("services.barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
         .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
         .order("appointment_time", { ascending: true });
       if (error) throw error;
@@ -145,7 +147,7 @@ const Admin = () => {
   });
 
   const { data: scheduleBlocks, isLoading: isLoadingBlocks } = useQuery({
-    queryKey: ["admin-schedule-blocks", format(selectedDate, "yyyy-MM-dd")],
+    queryKey: ["admin-schedule-blocks", THEBROOKLYNN_BARBERSHOP_ID, format(selectedDate, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("barbershop_schedule_blocks")
@@ -185,7 +187,7 @@ const Admin = () => {
 
   const deleteScheduleBlock = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("barbershop_schedule_blocks").delete().eq("id", id);
+      const { error } = await supabase.from("barbershop_schedule_blocks").delete().eq("id", id).eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID);
       if (error) throw error;
     },
     onSuccess: () => {
