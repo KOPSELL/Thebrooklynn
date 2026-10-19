@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const THEBROOKLYNN_BARBERSHOP_ID = "836d4853-d45e-44cb-9b87-14b88fc0fe48";
+const WC_CRISTIAN_BARBER_ID = "349e6144-1295-4064-8f5e-ac93cceb48d6";
 
 interface Barber {
   id: string;
@@ -42,7 +43,6 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
         .from("appointments")
         .select("id, client_name, client_phone, appointment_date, appointment_time, status, final_price, barber_id, barbers(name), services(name, price)")
         .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
-        .or("barber_id.is.null,barber_id.neq.349e6144-1295-4064-8f5e-ac93cceb48d6")
         .eq("status", "completed")
         .gte("appointment_date", rangeStart)
         .lte("appointment_date", rangeEnd)
@@ -54,7 +54,7 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
   });
 
   const filtered = useMemo(
-    () => (appointments ?? []).filter((a) => !filterBarber || a.barber_id === filterBarber),
+    () => (appointments ?? []).filter((a) => a.barber_id !== WC_CRISTIAN_BARBER_ID && (!filterBarber || a.barber_id === filterBarber)),
     [appointments, filterBarber],
   );
   const amount = (a: (typeof filtered)[number]) =>
