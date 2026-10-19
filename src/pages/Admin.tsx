@@ -60,7 +60,7 @@ const Admin = () => {
   const { data: barbers } = useQuery({
     queryKey: ["barbers", THEBROOKLYNN_BARBERSHOP_ID],
     queryFn: async () => {
-      const { data, error } = await supabase.from("barbers").select("*").eq("active", true).eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID).neq("id", WC_CRISTIAN_BARBER_ID);
+      const { data, error } = await supabase.from("barbers").select("*").eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID).neq("id", WC_CRISTIAN_BARBER_ID);
       if (error) throw error;
       return data;
     },
