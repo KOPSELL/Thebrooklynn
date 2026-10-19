@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
 const THEBROOKLYNN_BARBERSHOP_ID = "836d4853-d45e-44cb-9b87-14b88fc0fe48";
+const WC_CRISTIAN_BARBER_ID = "349e6144-1295-4064-8f5e-ac93cceb48d6";
 
 const BLOCK_TIMES = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -57,9 +58,9 @@ const Admin = () => {
   const [blockReason, setBlockReason] = useState("");
 
   const { data: barbers } = useQuery({
-    queryKey: ["barbers"],
+    queryKey: ["barbers", THEBROOKLYNN_BARBERSHOP_ID],
     queryFn: async () => {
-      const { data, error } = await supabase.from("barbers").select("*").eq("active", true).eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID);
+      const { data, error } = await supabase.from("barbers").select("*").eq("active", true).eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID).neq("id", WC_CRISTIAN_BARBER_ID);
       if (error) throw error;
       return data;
     },
@@ -67,12 +68,13 @@ const Admin = () => {
   });
 
   const { data: appointments, isLoading } = useQuery({
-    queryKey: ["admin-appointments", format(selectedDate, "yyyy-MM-dd"), filterBarber],
+    queryKey: ["admin-appointments", THEBROOKLYNN_BARBERSHOP_ID, format(selectedDate, "yyyy-MM-dd"), filterBarber],
     queryFn: async () => {
       let query = supabase
         .from("appointments")
         .select("*, barbers(name), services(name, duration_minutes, price)")
         .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .neq("barber_id", WC_CRISTIAN_BARBER_ID)
         .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
         .order("appointment_time", { ascending: true });
 
@@ -99,6 +101,7 @@ const Admin = () => {
         .select("*, barbers(name), services(name, duration_minutes, price)")
         .eq("id", notificationAppointmentId)
         .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .neq("barber_id", WC_CRISTIAN_BARBER_ID)
         .maybeSingle();
 
       if (cancelled) return;
@@ -125,7 +128,7 @@ const Admin = () => {
   }, [isAuthed, notificationAppointmentId]);
 
   const { data: dailyAppointments, isLoading: isLoadingDailyAppointments } = useQuery({
-    queryKey: ["admin-daily-appointments", format(selectedDate, "yyyy-MM-dd")],
+    queryKey: ["admin-daily-appointments", THEBROOKLYNN_BARBERSHOP_ID, format(selectedDate, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
