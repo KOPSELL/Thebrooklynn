@@ -42,6 +42,7 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
         .from("appointments")
         .select("id, client_name, client_phone, appointment_date, appointment_time, status, final_price, barber_id, barbers(name), services(name, price)")
         .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
+        .neq("barber_id", "349e6144-1295-4064-8f5e-ac93cceb48d6")
         .eq("status", "completed")
         .gte("appointment_date", rangeStart)
         .lte("appointment_date", rangeEnd)
