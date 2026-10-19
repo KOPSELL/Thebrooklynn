@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const THEBROOKLYNN_BARBERSHOP_ID = "836d4853-d45e-44cb-9b87-14b88fc0fe48";
+
 interface Barber {
   id: string;
   name: string;
@@ -34,11 +36,12 @@ const AdminFinancial = ({ barbers }: AdminFinancialProps) => {
   const rangeEnd = format(periodMode === "day" ? selectedDate : endOfMonth(selectedDate), "yyyy-MM-dd");
 
   const { data: appointments, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["financial-detail", rangeStart, rangeEnd],
+    queryKey: ["financial-detail", THEBROOKLYNN_BARBERSHOP_ID, rangeStart, rangeEnd],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
         .select("id, client_name, client_phone, appointment_date, appointment_time, status, final_price, barber_id, barbers(name), services(name, price)")
+        .eq("barbershop_id", THEBROOKLYNN_BARBERSHOP_ID)
         .eq("status", "completed")
         .gte("appointment_date", rangeStart)
         .lte("appointment_date", rangeEnd)
