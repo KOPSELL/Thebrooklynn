@@ -2,6 +2,13 @@
 -- Existing rows can still have status/price fields updated without revalidating legacy ownership.
 -- Apply this SQL migration to the shared Supabase project for database-level isolation.
 
+-- Repair the known Thebrooklynn barber row before enabling ownership validation.
+-- This only touches Greg when his shop is currently NULL.
+UPDATE public.barbers
+SET barbershop_id = '836d4853-d45e-44cb-9b87-14b88fc0fe48'
+WHERE id = '8b09761e-ef06-47ae-b182-591ff2f40560'
+  AND barbershop_id IS NULL;
+
 CREATE OR REPLACE FUNCTION public.enforce_appointment_barbershop_ownership()
 RETURNS trigger
 LANGUAGE plpgsql
